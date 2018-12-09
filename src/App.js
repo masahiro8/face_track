@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import styles from './App.scss';
 import * as tf from '@tensorflow/tfjs';
+import * as faceapi from 'face-api.js/dist/face-api.js';
 
 const CLASSES = {0:'zero', 1:'one', 2:'two', 3:'three', 4:'four',5:'five', 6:'six', 7:'seven', 8:'eight', 9:'nine'}
 
@@ -54,7 +55,6 @@ class HandDetect extends Component{
   constructor(props){
     super(props);
     this.model = null;
-    this.canvas = null;
     this.state = {
       results : []
     }
@@ -67,12 +67,10 @@ class HandDetect extends Component{
   async init (){
     await this.loadModel();
     setInterval(()=>{
-      this.draw();
       this.predict();
-    },200);
+    },this.props.interval);
   }
 
-  
   //TFモデルのロード
   async loadModel() {
     this.model = await tf.loadModel(`./models/hand/model.json`);
@@ -111,9 +109,81 @@ class HandDetect extends Component{
   }
 
   imageFromVideo(){
-    let tensor = tf.fromPixels(this.canvas).resizeNearestNeighbor([100,100]).toFloat();
+    let tensor = tf.fromPixels(this.props.canvas).resizeNearestNeighbor([100,100]).toFloat();
     let offset = tf.scalar(255);
     return tensor.div(offset).expandDims();
+  }
+
+  render(){
+    return(
+      <React.Fragment>
+        <div className="log" >
+          {this.getLogs()}
+        </div>
+      </React.Fragment>
+    )
+  }
+}
+
+class FaceDetect extends Component{
+
+  constructor(props){
+    super(props);
+    this.canvas = null;
+    this.state = {
+      faceDetect: {},
+    }
+  }
+
+  async componentDidMount(){
+    await this.init();
+    console.log("loaded Face model");
+    
+    setInterval( async ()=>{
+      await this.predict();
+    },this.props.interval);
+  }
+
+  async init (){
+    return await faceapi.nets.ssdMobilenetv1.loadFromUri('./models/face/');
+  }
+
+  async predict () {
+    if(!this.props.canvas) return;
+    const detection = await faceapi.detectSingleFace(this.props.canvas);
+    if( detection ) {
+      //console.log("--" , detection._box );
+      this.setState({faceDetect : detection._box})
+    }
+  }
+
+  getLogs () {
+    if(this.state.faceDetect=={}) return(<div/>);
+    return(<div>x={this.state.faceDetect._width},y={this.state.faceDetect._height}</div>)
+  }
+
+  render(){
+    return(
+      <React.Fragment>
+        <div className="log" >
+          {this.getLogs()}
+        </div>
+      </React.Fragment>
+    )
+  }
+}
+
+class Canvas extends Component {
+
+  constructor(props){
+    super(props);
+    this.canvas = null;
+  }
+
+  componentDidMount(){
+    setInterval(()=>{
+      this.draw();
+    },this.props.interval);
   }
 
   draw(){
@@ -129,14 +199,12 @@ class HandDetect extends Component{
 
   render(){
     return(
-      <React.Fragment>
-        <div className="log" >
-          {this.getLogs()}
-        </div>
-        <canvas 
-          ref={(ref)=>{this.canvas=ref;}}  
+      <canvas 
+          ref={(ref)=>{
+            this.canvas=ref;
+            this.props.set(ref);
+          }}  
           className={styles["canvas"]} />
-      </React.Fragment>
     )
   }
 }
@@ -147,12 +215,19 @@ class App extends Component {
     super(props);
     this.state= {
       video:null,
+      canvas:null,
     }
   }
 
   setVideo(ref){
     if(this.state.video!==ref && ref){
       this.setState({video:ref});
+    }
+  }
+
+  setCanvas(ref) {
+    if(this.state.canvas!==ref && ref){
+      this.setState({canvas:ref});
     }
   }
 
@@ -163,7 +238,16 @@ class App extends Component {
           setSelf={(ref)=>{this.setVideo(ref)}}
         />
         <HandDetect 
-          video={this.state.video}
+          canvas={this.state.canvas}
+          interval = {500}
+        />
+        <FaceDetect 
+          canvas={this.state.canvas}
+          interval = {500} />
+        <Canvas
+          video={this.state.video} 
+          set={(ref)=>{ this.setCanvas(ref)}} 
+          interval = {500}
         />
       </div>
     );

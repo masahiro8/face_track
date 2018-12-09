@@ -5,9 +5,10 @@
 
 :local(video){
   @include video;
+  //visibility: hidden;
 }
 
 :local(canvas){
   @include video;
-  visibility: hidden;
+  //visibility: hidden;
 }

@@ -4,6 +4,7 @@
   "private": true,
   "dependencies": {
     "@tensorflow/tfjs": "^0.14.1",
+    "axios": "^0.18.0",
     "canvas": "^2.2.0",
     "face-api.js": "^0.16.1",
     "node-sass": "^4.10.0",
