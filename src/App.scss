@@ -1,0 +1,13 @@
+
+@mixin video {
+  width: 480px;
+}
+
+:local(video){
+  @include video;
+}
+
+:local(canvas){
+  @include video;
+  visibility: hidden;
+}
