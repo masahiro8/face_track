@@ -3,6 +3,7 @@ import styles from './App.scss';
 import * as tf from '@tensorflow/tfjs';
 import * as faceapi from 'face-api.js/dist/face-api.js';
 
+// const worker = new Worker('./worker/predict.js');
 const CLASSES = {0:'zero', 1:'one', 2:'two', 3:'three', 4:'four',5:'five', 6:'six', 7:'seven', 8:'eight', 9:'nine'}
 
 class Video extends Component {
@@ -49,6 +50,8 @@ class Video extends Component {
     )
   }
 }
+
+
 
 class HandDetect extends Component{
 
@@ -204,6 +207,7 @@ class Canvas extends Component {
             this.canvas=ref;
             this.props.set(ref);
           }}  
+          id={'canvas'}
           className={styles["canvas"]} />
     )
   }
