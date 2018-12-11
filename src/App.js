@@ -1,7 +1,10 @@
 import React, { Component } from 'react';
+import * as _ from 'lodash';
 import styles from './App.scss';
 import * as tf from '@tensorflow/tfjs';
 import * as faceapi from 'face-api.js/dist/face-api.js';
+// eslint-disable-next-line
+import Worker from './hand.worker.js';
 
 // const worker = new Worker('./worker/predict.js');
 const CLASSES = {0:'zero', 1:'one', 2:'two', 3:'three', 4:'four',5:'five', 6:'six', 7:'seven', 8:'eight', 9:'nine'}
@@ -19,12 +22,10 @@ class Video extends Component {
   }
 
   initCam () {
-    this.media = navigator.mediaDevices.getUserMedia(
-      {
+    this.media = navigator.mediaDevices.getUserMedia({
         audio : false, 
         video : {facingMode: "user"}
-      }
-    );
+      });
     this.media.then((stream)=>{
       this.selfRef.srcObject = stream;
       this.selfRef.onloadedmetadata = function(e) {
@@ -61,6 +62,7 @@ class HandDetect extends Component{
     this.state = {
       results : []
     }
+    this.tfWorker = new Worker();
   }
 
   async componentDidMount(){
@@ -68,40 +70,59 @@ class HandDetect extends Component{
   }
 
   async init (){
-    await this.loadModel();
-    setInterval(()=>{
-      this.predict();
+    // await this.loadModel();
+    setInterval(async ()=>{
+      //this.predict();
+      console.log("setInterval");
+
+      let width = this.props.canvas.width;
+      let height = this.props.canvas.height;
+
+      var source = this.props.canvas.getContext("2d").getImageData(0,0,width,height);
+      // let offset = tf.scalar(255);
+      // let tensor = tf.fromPixels(source).resizeNearestNeighbor([100,100]).cast('float32');
+      // let _tensor = tensor.div(offset).expandDims();
+      // let prediction = await this.model.predict(_tensor).data();
+      // this.tfWorker.postMessage(_tensor);
+      this.tfWorker.postMessage({
+        width:width,
+        height:height,
+        raw:source.data,
+      },[source.data.buffer]);
+
     },this.props.interval);
   }
 
   //TFモデルのロード
-  async loadModel() {
-    this.model = await tf.loadModel(`./models/hand/model.json`);
-    let p = new Promise( resolve =>{
-      if(this.model) {
-        console.log("loaded model");
-        resolve();
-      }
-    });
-    return p;
-  };
+  // async loadModel() {
+  //   this.model = await tf.loadModel(`./models/hand/model.json`);
+  //   let p = new Promise( resolve =>{
+  //     if(this.model) {
+  //       console.log("loaded model");
+  //       resolve();
+  //     }
+  //   });
+  //   return p;
+  // };
 
-  async predict () {
-    let tensor = this.imageFromVideo();
-    let prediction = await this.model.predict(tensor).data();
-    let results = Array.from(prediction).map((p,i)=>{
-      return {
-        probability: p,
-        className: CLASSES[i]
-      }
-    }).sort((a,b)=>{//一致度の高い順
-      return b.probability-a.probability;
-    }).slice(0,5);//上位5件
+  // async predict () {
+  //   let tensor = this.imageFromVideo();
+  //   let prediction = await this.model.predict(tensor).data();
+  //   let results = Array.from(prediction).map((p,i)=>{
+  //     return {
+  //       probability: p,
+  //       className: CLASSES[i]
+  //     }
+  //   }).sort((a,b)=>{//一致度の高い順
+  //     return b.probability-a.probability;
+  //   }).slice(0,5);//上位5件
 
-    this.setState({
-      results:results,
-    })
-  }
+  //   this.setState({
+  //     results:results,
+  //   })
+  // }
+
+
 
   getLogs(){
     return this.state.results.map( p =>{
