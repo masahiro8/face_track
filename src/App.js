@@ -1,96 +1,129 @@
-import React, { Component } from 'react';
-import * as _ from 'lodash';
-import styles from './App.scss';
-import * as tf from '@tensorflow/tfjs';
-import * as faceapi from 'face-api.js/dist/face-api.js';
+import React, { Component } from "react";
+import * as _ from "lodash";
+import styles from "./App.scss";
+import * as tf from "@tensorflow/tfjs";
+import * as faceapi from "face-api.js/dist/face-api.js";
 // eslint-disable-next-line
-import Worker from './hand.worker.js';
+import Worker from "./hand.worker.js";
 
 // const worker = new Worker('./worker/predict.js');
-const CLASSES = {0:'zero', 1:'one', 2:'two', 3:'three', 4:'four',5:'five', 6:'six', 7:'seven', 8:'eight', 9:'nine'}
+const CLASSES = {
+  0: "zero",
+  1: "one",
+  2: "two",
+  3: "three",
+  4: "four",
+  5: "five",
+  6: "six",
+  7: "seven",
+  8: "eight",
+  9: "nine"
+};
 
 class Video extends Component {
-
-  constructor(props){
+  constructor(props) {
     super(props);
     this.media = null;
-    this.selfRef=null;
+    this.selfRef = null;
   }
 
-  componentDidMount(){
+  componentDidMount() {
     this.initCam();
   }
 
-  initCam () {
+  initCam() {
     this.media = navigator.mediaDevices.getUserMedia({
-        audio : false, 
-        video : {facingMode: "user"}
-      });
-    this.media.then((stream)=>{
+      audio: false,
+      video: { facingMode: "environment" }
+    });
+    this.media.then(stream => {
       this.selfRef.srcObject = stream;
       this.selfRef.onloadedmetadata = function(e) {
         console.log("Onload video");
       };
-    })
-    this.media.catch((err)=>{
+    });
+    this.media.catch(err => {
       alert(err);
-    })
+    });
   }
 
-  render(){
-    return(
-      <video 
-        ref={(ref)=>{
+  render() {
+    return (
+      <video
+        ref={ref => {
           this.selfRef = ref;
           this.props.setSelf(ref);
-        }} 
+        }}
         className={styles["video"]}
-        autoPlay 
+        autoPlay
         playsInline
       />
-    )
+    );
   }
 }
 
-
-
-class HandDetect extends Component{
-
-  constructor(props){
+class HandDetect extends Component {
+  constructor(props) {
     super(props);
     this.model = null;
     this.state = {
-      results : []
-    }
+      results: [],
+      counter: 0
+    };
     this.tfWorker = new Worker();
   }
 
-  async componentDidMount(){
+  async componentDidMount() {
     this.init();
+
+    this.tfWorker.addEventListener("message", values => {      
+      let results = Array.from(values.data)
+        .map((p, i) => {
+          return {
+            probability: p,
+            className: CLASSES[i]
+          };
+        })
+        .sort((a, b) => {
+          //一致度の高い順
+          return b.probability - a.probability;
+        })
+        .slice(0, 5); //上位5件
+
+      this.setState({
+        results: results,
+        counter : this.state.counter + 1
+      });
+    });
   }
 
-  async init (){
-    // await this.loadModel();
-    setInterval(async ()=>{
-      //this.predict();
-      console.log("setInterval");
+  async init() {
+    setInterval(
+      async () =>
+        tf.tidy(() => {
+          let width = this.props.canvas.width;
+          let height = this.props.canvas.height;
 
-      let width = this.props.canvas.width;
-      let height = this.props.canvas.height;
+          var source = this.props.canvas
+            .getContext("2d")
+            .getImageData(0, 0, width, height);
 
-      var source = this.props.canvas.getContext("2d").getImageData(0,0,width,height);
-      // let offset = tf.scalar(255);
-      // let tensor = tf.fromPixels(source).resizeNearestNeighbor([100,100]).cast('float32');
-      // let _tensor = tensor.div(offset).expandDims();
-      // let prediction = await this.model.predict(_tensor).data();
-      // this.tfWorker.postMessage(_tensor);
-      this.tfWorker.postMessage({
-        width:width,
-        height:height,
-        raw:source.data,
-      },[source.data.buffer]);
+          let offset = tf.scalar(255);
+          let tensor = tf
+            .fromPixels(source)
+            .resizeNearestNeighbor([100, 100])
+            .cast("float32");
 
-    },this.props.interval);
+          const _tensor = tensor.div(offset).expandDims();
+
+          let float_array = _tensor.toFloat().buffer().values;
+
+          this.tfWorker.postMessage({ float_array, shape: _tensor.shape }, [
+            float_array.buffer
+          ]);
+        }),
+      this.props.interval
+    );
   }
 
   //TFモデルのロード
@@ -122,96 +155,98 @@ class HandDetect extends Component{
   //   })
   // }
 
-
-
-  getLogs(){
-    return this.state.results.map( p =>{
-      return(
-        <div>{p.className}:{p.probability.toFixed(5)}</div>
-      )
-    })
+  getLogs() {
+    return this.state.results.map(p => {
+      return (
+        <div>
+          {p.className}:{p.probability.toFixed(5)}
+        </div>
+      );
+    });
   }
 
-  imageFromVideo(){
-    let tensor = tf.fromPixels(this.props.canvas).resizeNearestNeighbor([100,100]).toFloat();
+  imageFromVideo() {
+    let tensor = tf
+      .fromPixels(this.props.canvas)
+      .resizeNearestNeighbor([100, 100])
+      .toFloat();
     let offset = tf.scalar(255);
     return tensor.div(offset).expandDims();
   }
 
-  render(){
-    return(
+  render() {
+    return (
       <React.Fragment>
-        <div className="log" >
-          {this.getLogs()}
-        </div>
+        <div className="log">{this.getLogs()}</div>
+        <div>解析回数 : {this.state.counter} 回目</div>
       </React.Fragment>
-    )
+    );
   }
 }
 
-class FaceDetect extends Component{
-
-  constructor(props){
+class FaceDetect extends Component {
+  constructor(props) {
     super(props);
     this.canvas = null;
     this.state = {
-      faceDetect: {},
-    }
+      faceDetect: {}
+    };
   }
 
-  async componentDidMount(){
+  async componentDidMount() {
     await this.init();
     console.log("loaded Face model");
-    
-    setInterval( async ()=>{
+
+    setInterval(async () => {
       await this.predict();
-    },this.props.interval);
+    }, this.props.interval);
   }
 
-  async init (){
-    return await faceapi.nets.ssdMobilenetv1.loadFromUri('./models/face/');
+  async init() {
+    return await faceapi.nets.ssdMobilenetv1.loadFromUri("./models/face/");
   }
 
-  async predict () {
-    if(!this.props.canvas) return;
+  async predict() {
+    if (!this.props.canvas) return;
     const detection = await faceapi.detectSingleFace(this.props.canvas);
-    if( detection ) {
+    if (detection) {
       //console.log("--" , detection._box );
-      this.setState({faceDetect : detection._box})
+      this.setState({ faceDetect: detection._box });
     }
   }
 
-  getLogs () {
-    if(this.state.faceDetect=={}) return(<div/>);
-    return(<div>x={this.state.faceDetect._width},y={this.state.faceDetect._height}</div>)
+  getLogs() {
+    if (this.state.faceDetect == {}) return <div />;
+    return (
+      <div>
+        x={this.state.faceDetect._width},y={this.state.faceDetect._height}
+      </div>
+    );
   }
 
-  render(){
-    return(
+  render() {
+    return (
       <React.Fragment>
-        <div className="log" >
-          {this.getLogs()}
-        </div>
+        <div className="log">{this.getLogs()}</div>
       </React.Fragment>
-    )
+    );
   }
 }
 
 class Canvas extends Component {
-
-  constructor(props){
+  constructor(props) {
     super(props);
     this.canvas = null;
   }
 
-  componentDidMount(){
-    setInterval(()=>{
+  componentDidMount() {
+    setInterval(() => {
       this.draw();
-    },this.props.interval);
+    }, this.props.interval);
   }
 
-  draw(){
-    if(!this.props.video) {
+  draw() {
+    if (!this.props.video) {
       return;
     }
     let rect = this.props.video.getBoundingClientRect();
@@ -221,38 +256,38 @@ class Canvas extends Component {
     context.drawImage(this.props.video, 0, 0, rect.width, rect.height);
   }
 
-  render(){
-    return(
-      <canvas 
-          ref={(ref)=>{
-            this.canvas=ref;
-            this.props.set(ref);
-          }}  
-          id={'canvas'}
-          className={styles["canvas"]} />
-    )
+  render() {
+    return (
+      <canvas
+        ref={ref => {
+          this.canvas = ref;
+          this.props.set(ref);
+        }}
+        id={"canvas"}
+        className={styles["canvas"]}
+      />
+    );
   }
 }
 
 class App extends Component {
-
-  constructor(props){
+  constructor(props) {
     super(props);
-    this.state= {
-      video:null,
-      canvas:null,
-    }
+    this.state = {
+      video: null,
+      canvas: null
+    };
   }
 
-  setVideo(ref){
-    if(this.state.video!==ref && ref){
-      this.setState({video:ref});
+  setVideo(ref) {
+    if (this.state.video !== ref && ref) {
+      this.setState({ video: ref });
     }
   }
 
   setCanvas(ref) {
-    if(this.state.canvas!==ref && ref){
-      this.setState({canvas:ref});
+    if (this.state.canvas !== ref && ref) {
+      this.setState({ canvas: ref });
     }
   }
 
@@ -260,19 +295,18 @@ class App extends Component {
     return (
       <div className="App">
         <Video
-          setSelf={(ref)=>{this.setVideo(ref)}}
+          setSelf={ref => {
+            this.setVideo(ref);
+          }}
         />
-        <HandDetect 
-          canvas={this.state.canvas}
-          interval = {500}
-        />
-        <FaceDetect 
-          canvas={this.state.canvas}
-          interval = {500} />
+        <HandDetect canvas={this.state.canvas} interval={500} />
+        {/* <FaceDetect canvas={this.state.canvas} interval={500} /> */}
         <Canvas
-          video={this.state.video} 
-          set={(ref)=>{ this.setCanvas(ref)}} 
-          interval = {500}
+          video={this.state.video}
+          set={ref => {
+            this.setCanvas(ref);
+          }}
+          interval={500}
         />
       </div>
     );
