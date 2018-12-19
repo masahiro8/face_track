@@ -1,6 +1,7 @@
 
 @mixin video {
   width: 480px;
+  transform:scale(-1,1);
 }
 
 :local(video){

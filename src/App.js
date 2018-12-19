@@ -3,8 +3,12 @@ import * as _ from "lodash";
 import styles from "./App.scss";
 import * as tf from "@tensorflow/tfjs";
 import * as faceapi from "face-api.js/dist/face-api.js";
+import * as posenet from '@tensorflow-models/posenet';
+import {setPoint} from './canvas.point.js';
+
 // eslint-disable-next-line
-import Worker from "./hand.worker.js";
+import handWorker from "./hand.worker.js";
+import emotionWorker from "./emotion.worker.js";
 
 // const worker = new Worker('./worker/predict.js');
 const CLASSES = {
@@ -19,6 +23,15 @@ const CLASSES = {
   8: "eight",
   9: "nine"
 };
+
+const CLASSES_EMOTION =  ({
+  0:'😠 angry',
+  1:'😬 disgust',
+  2:'😨 fear',
+  3:'😄 happy',
+  4:'😢 sad',
+  5:'😮 surprise',
+  6:'😐 neutral'});
 
 class Video extends Component {
   constructor(props) {
@@ -70,13 +83,18 @@ class HandDetect extends Component {
       results: [],
       counter: 0
     };
-    this.tfWorker = new Worker();
+    this.initWorker();
+  }
+
+  initWorker () {
+    this.tfWorker = new handWorker();
   }
 
   async componentDidMount() {
     this.init();
 
     this.tfWorker.addEventListener("message", values => {      
+      console.log("Worker.addEventListener message");
       let results = Array.from(values.data)
         .map((p, i) => {
           return {
@@ -181,6 +199,158 @@ class HandDetect extends Component {
         <div>解析回数 : {this.state.counter} 回目</div>
       </React.Fragment>
     );
+  }
+}
+
+class EmotionDetect extends Component {
+
+  constructor(props){
+    super(props);
+    this.model = null;
+    this.state = {
+      results : []
+    }
+  }
+
+  async componentDidMount(){
+    this.init();
+  }
+
+  async init (){
+    await this.loadModel();
+    setInterval(()=>{
+      this.predict();
+    },this.props.interval);
+  }
+
+  //TFモデルのロード
+  async loadModel() {
+    this.model = await tf.loadModel(`./models/emotion/model.json`);
+    let p = new Promise( resolve =>{
+      if(this.model) {
+        console.log("loaded model");
+        resolve();
+      }
+    });
+    return p;
+  };
+
+  async predict () {
+    let tensor = this.imageFromVideo();
+    let prediction = await this.model.predict(tensor).data();
+    let results = Array.from(prediction).map((p,i)=>{
+      return {
+        probability: p,
+        className: CLASSES_EMOTION[i]
+      }
+    }).sort((a,b)=>{//一致度の高い順
+      return b.probability-a.probability;
+    }).slice(0,5);//上位5件
+
+    this.setState({
+      results:results,
+    })
+  }
+
+  getLogs(){
+    return this.state.results.map( p =>{
+      return(
+        <div>{p.className}:{p.probability.toFixed(5)}</div>
+      )
+    })
+  }
+
+  imageFromVideo(){
+    const channels = 1;
+    let tensor = tf.fromPixels(this.props.canvas,channels).resizeNearestNeighbor([64,64]).toFloat();
+    let offset = tf.scalar(255);
+    return tensor.div(offset).expandDims();
+  }
+
+  render(){
+    return(
+      <React.Fragment>
+        <div className="log" >{this.getLogs()}</div>
+      </React.Fragment>
+    )
+  }
+}
+
+class PoseDetect extends Component {
+
+  constructor(props){
+    super(props);
+    this.model = null;
+    this.state = {
+      results : []
+    }
+
+    
+  }
+
+  async componentDidMount(){
+    this.init();
+  }
+
+  async init (){
+    await this.loadModel();
+    setInterval(()=>{
+      this.predict();
+    },this.props.interval);
+  }
+
+  //TFモデルのロード
+  async loadModel() {
+    this.model =  await posenet.load();
+    let p = new Promise( resolve =>{
+      if(this.model) {
+        console.log("loaded pose model");
+        resolve();
+      }
+    });
+    return p;
+  };
+
+  async predict () {
+    //let tensor = this.imageFromVideo();
+    const pose = await this.model.estimateSinglePose(this.props.canvas, 0.50, true, 16);
+    let results = pose.keypoints.map((p,i)=>{
+      return {
+        score: p.score,
+        className: p.part,
+        position: p.position,
+      }
+    }).sort((a,b)=>{//一致度の高い順
+      return b.score-a.score;
+    })
+
+    this.setState({
+      results:results,
+    })
+
+    this.drawPoints();
+  }
+
+  drawPoints () {
+    this.state.results.map( p =>{
+      setPoint(this.props.canvas , p.position );
+    });
+  }
+
+  getLogs(){
+    return this.state.results.map( p =>{
+      return(
+        <div>{p.className}:{p.score.toFixed(5)}</div>
+      )
+    })
+  }
+
+  render(){
+    return(
+      <React.Fragment>
+        <div className="log" >{this.getLogs()}</div>
+      </React.Fragment>
+    )
   }
 }
 
@@ -299,8 +469,10 @@ class App extends Component {
             this.setVideo(ref);
           }}
         />
+        <EmotionDetect canvas={this.state.canvas} interval={500} />
+        <FaceDetect canvas={this.state.canvas} interval={500} />
+        <PoseDetect canvas={this.state.canvas} interval={100} />
         <HandDetect canvas={this.state.canvas} interval={500} />
-        {/* <FaceDetect canvas={this.state.canvas} interval={500} /> */}
         <Canvas
           video={this.state.video}
           set={ref => {
