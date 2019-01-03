@@ -1,5 +1,5 @@
 import * as tf from "@tensorflow/tfjs";
-import { location } from "./config";
+import { location } from "../config";
 
 const handWorker = self;
 

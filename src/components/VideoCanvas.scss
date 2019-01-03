@@ -1,0 +1,31 @@
+@mixin video {
+  width: 640px;
+  height: 480px;
+}
+
+:local(.overlayCanvas) {
+  @include video;
+  position: absolute;
+  z-index: 1;
+  top:0;
+  left:0;
+  // border:1px solid red;
+  transform:scale(-1,1);
+}
+
+:local(.videoimage){
+  position: relative;
+  .video {
+    @include video;
+    transform:scale(-1,1);
+  }
+  .canvas {
+    @include video;
+    transform:scale(-1,1);
+    top:0;
+    left:0;
+    position: absolute;
+    z-index: -1;
+    visibility: hidden;
+  }
+}
