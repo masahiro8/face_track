@@ -10,18 +10,18 @@
   top:0;
   left:0;
   // border:1px solid red;
-  transform:scale(-1,1);
+  // transform:scale(-1,1);
 }
 
 :local(.videoimage){
   position: relative;
   .video {
     @include video;
-    transform:scale(-1,1);
+    // transform:scale(-1,1);
   }
   .canvas {
     @include video;
-    transform:scale(-1,1);
+    // transform:scale(-1,1);
     top:0;
     left:0;
     position: absolute;
