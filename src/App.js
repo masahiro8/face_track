@@ -1,11 +1,10 @@
 import React, { Component } from "react";
-import * as tf from "@tensorflow/tfjs";
 import * as faceapi from "face-api.js/dist/face-api.js";
 import * as _ from 'lodash';
 import math from 'mathjs';
 import {FaceDetect} from './components/FaceDetect';
 import {VideoImage} from './components/VideoCanvas';
-import {setPoint,getLandmarks ,drawLandmarks} from './canvas.point';
+import {setPoint,getLandmarks } from './canvas.point';
 import styles from './components/VideoCanvas.scss';
 import { VIDEO_SIZE , INTERVAL } from './config';
 import * as vector from './util/vector';
