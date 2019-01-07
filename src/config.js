@@ -7,4 +7,8 @@ export const VIDEO_SIZE = {
 export const INTERVAL =  Math.floor(1000/30);
 
 //追従するパーツ
-export const PARTS_INDEX = [30,38,44]; // 鼻 左目　右目
+export const PARTS_INDEX = {
+  nose :30,
+  leftEye :38,
+  rightEye :44,
+} //[30,38,44]; // 鼻 左目　右目

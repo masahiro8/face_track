@@ -6,8 +6,11 @@ import {FaceDetect} from './components/FaceDetect';
 import {VideoImage} from './components/VideoCanvas';
 import {setPoint,getLandmarks } from './canvas.point';
 import styles from './components/VideoCanvas.scss';
-import { VIDEO_SIZE , INTERVAL } from './config';
+import { VIDEO_SIZE , INTERVAL ,PARTS_INDEX } from './config';
 import * as vector from './util/vector';
+
+const BASE_PARTS = PARTS_INDEX.leftEye;
+const VECTOR_PARTS = PARTS_INDEX.rightEye;
 
 class App extends Component {
   constructor(props) {
@@ -78,7 +81,9 @@ class App extends Component {
         <FaceDetectView
           video = {this.state.video}
           landmarks ={this.state.landmarks}
-          positions = { this.state.positions}
+          positions = {this.state.positions}
+          showEyes = {true}
+          showPoints = {true}
           setRef = {(ref)=>{this.setOverlay(ref)}}
         />
       </div>
@@ -99,12 +104,13 @@ class FaceDetectView extends Component {
 
   componentWillReceiveProps(nextProps){
     if(nextProps.landmarks) {
-      this.drawPoints();
-      this.drawParts();
+      this.clearCanvas();
+      if(this.props.showEyes) this.drawPoints();
+      if(this.props.showPoints) this.drawParts();
       if(this.state.points.length) {
         _.each ( this.state.points ,  ( point , index ) =>{
-          this.initPointRate( point,index ,nextProps.positions[38] , nextProps.positions[44]);
-          this.setPoint(point,index ,nextProps.positions[38] , nextProps.positions[44]);
+          this.initPointRate( point,index ,nextProps.positions[BASE_PARTS] , nextProps.positions[VECTOR_PARTS]);
+          this.setPoint(point,index ,nextProps.positions[BASE_PARTS] , nextProps.positions[VECTOR_PARTS]);
         })
       }
     }
@@ -115,6 +121,7 @@ class FaceDetectView extends Component {
     this.props.setRef(ref);
   }
 
+  //描画
   setPoint ( myPoint, index , begin, end ) {
     //原点をbeginとして補正
     const _begin = { x:0 , y: 0};
@@ -140,6 +147,7 @@ class FaceDetectView extends Component {
     setPoint( this.canvas , {x:vec2.x , y:vec2.y} , `rgba(255,255,255)`);
   }
 
+  //初期値
   initPointRate( myPoint, index , begin, end ) {
 
     if ( myPoint.rate ) return;
@@ -187,17 +195,20 @@ class FaceDetectView extends Component {
     })
   }
 
-  //両目を描画
-  drawPoints (){
-    let landmarks = this.props.landmarks;
+  //キャンバスをクリア
+  clearCanvas () {
     const context = this.canvas.getContext("2d");
     context.clearRect(0, 0, VIDEO_SIZE.width, VIDEO_SIZE.height);
+  }
+
+  //ベースパーツを描画
+  drawPoints (){
     let index = 0;
     _.each ( this.props.positions ,  point =>{
-      if(index == 38) {
+      if(index == BASE_PARTS) {
         setPoint( this.canvas , {x:point.x , y:point.y} , `rgba(255,0,0)`);
       }
-      if(index == 44) {
+      if(index == VECTOR_PARTS) {
         setPoint( this.canvas , {x:point.x , y:point.y} , `rgba(0,255,0)`);
       }
       index++;
@@ -213,8 +224,8 @@ class FaceDetectView extends Component {
         `rgb(255,${index},${index})`,
         `rgb(${index},255,${index})`,
         `rgb(${index},${index},255)`,
-        `rgb(255,255,${index})`,
-        `rgb(${index},255,255)`,
+        `rgb(255,255,${index})`,//左目
+        `rgb(${index},255,255)`,//右目
         `rgb(255,${index},255)`,
         `rgb(${index},${index},${index})`,
       ]
@@ -229,9 +240,7 @@ class FaceDetectView extends Component {
       index = 0;
       parts.map ( point => {
         index++;
-        if(( col==3 || col==4 )&& index == 3) {
-          setPoint( this.canvas , {x:point.x , y:point.y} , getColor(col , index*step ));
-        }
+        setPoint( this.canvas , {x:point.x , y:point.y} , getColor(col , index*step ));
       })
     })
     
