@@ -5,9 +5,11 @@ import math from 'mathjs';
 import {FaceDetect} from './components/FaceDetect';
 import {VideoImage} from './components/VideoCanvas';
 import {setPoint,getLandmarks } from './canvas.point';
+import {setImage ,setRotate } from './canvas.image';
 import styles from './components/VideoCanvas.scss';
 import { VIDEO_SIZE , INTERVAL ,PARTS_INDEX } from './config';
 import * as vector from './util/vector';
+import AssetLoader from './components/AssetLoader';
 
 const BASE_PARTS = PARTS_INDEX.leftEye;
 const VECTOR_PARTS = PARTS_INDEX.rightEye;
@@ -15,6 +17,10 @@ const VECTOR_PARTS = PARTS_INDEX.rightEye;
 class App extends Component {
   constructor(props) {
     super(props);
+    this.assets =  [
+      {id:1,src:'/images/glasses_01.png',type:'image'},
+    ];
+
     this.state = {
       video:null,
       canvas: null,
@@ -22,8 +28,10 @@ class App extends Component {
       result : null,
       landmarks : null,
       positions : null,
+      assets : [],
     };
     this.overlay = null;
+    
   }
 
   setCanvas(ref) {
@@ -78,14 +86,22 @@ class App extends Component {
               positions:resizedResults[0].landmarks.positions
             });
           }} />
-        <FaceDetectView
-          video = {this.state.video}
-          landmarks ={this.state.landmarks}
-          positions = {this.state.positions}
-          showEyes = {true}
-          showPoints = {true}
-          setRef = {(ref)=>{this.setOverlay(ref)}}
-        />
+        <AssetLoader
+          assets = {this.assets}
+          setImages = {(images)=>{
+            this.setState({assets:images});
+          }}
+        >
+          <FaceDetectView
+            video = {this.state.video}
+            landmarks ={this.state.landmarks}
+            positions = {this.state.positions}
+            showEyes = {true}
+            showPoints = {false}
+            setRef = {(ref)=>{this.setOverlay(ref)}}
+            assets = {this.state.assets}
+          />
+        </AssetLoader>
       </div>
     );
   }
@@ -96,15 +112,21 @@ class FaceDetectView extends Component {
   constructor(props){
     super(props);
     this.canvas = null;
+    this.tilt = null;
 
     this.state ={
-      points:[]
+      points:[],
+      tilt:null,
     };
   }
 
   componentWillReceiveProps(nextProps){
     if(nextProps.landmarks) {
       this.clearCanvas();
+
+      //傾き
+      this.detectTilt(nextProps.positions[VECTOR_PARTS],nextProps.positions[BASE_PARTS]);
+
       if(this.props.showEyes) this.drawPoints();
       if(this.props.showPoints) this.drawParts();
       if(this.state.points.length) {
@@ -121,8 +143,21 @@ class FaceDetectView extends Component {
     this.props.setRef(ref);
   }
 
+  //傾き検出
+  detectTilt ( begin , end ){
+    //原点をbeginとして補正
+    const _begin = { x:0 , y: 0};
+    const _end = vector.shiftBase( begin , end);
+    //なす角
+    const _crossProduct = vector.crossProduct(_end,{x:100,y:0});
+    const radian = Math.acos(vector.tilt(_end));
+    const deg = radian*(180/Math.PI);
+    this.tilt = _crossProduct<0?radian:-deg*(Math.PI/180);
+  }
+
   //描画
   setPoint ( myPoint, index , begin, end ) {
+
     //原点をbeginとして補正
     const _begin = { x:0 , y: 0};
     const _end = vector.shiftBase( begin , end);
@@ -143,6 +178,15 @@ class FaceDetectView extends Component {
     const vec2 = {
       x:distanceFromCenter * Math.cos(radian) + vec.x,
       y:distanceFromCenter * Math.sin(radian) + vec.y,
+    }
+
+    //仮で画像描画
+    if(this.props.assets[0].image ) {
+      const img = this.props.assets[0].image;
+      let _x = vec2.x - (img.width/2);
+      let _y = vec2.y - (img.height/2);
+      // setImage( this.canvas ,{x:_x , y:_y} , img );
+      setRotate( this.canvas ,{x:_x , y:_y}, this.tilt , img );
     }
     setPoint( this.canvas , {x:vec2.x , y:vec2.y} , `rgba(255,255,255)`);
   }

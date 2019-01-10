@@ -34,3 +34,8 @@
     export const distance = (p1, p2) => {
       return Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2));
     };
+
+    //原点(0,0)からx軸の傾き
+    export const tilt = ( a ) => {
+      return a.x / vectorLength(a);
+    }
