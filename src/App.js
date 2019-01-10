@@ -18,7 +18,7 @@ class App extends Component {
   constructor(props) {
     super(props);
     this.assets =  [
-      {id:1,src:'/images/glasses_01.png',type:'image'},
+      {id:1,src:'./images/glasses_01.png',type:'image'},
     ];
 
     this.state = {
@@ -105,6 +105,7 @@ class App extends Component {
       </div>
     );
   }
+
 }
 export default App;
 
