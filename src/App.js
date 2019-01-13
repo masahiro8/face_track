@@ -10,6 +10,8 @@ import styles from './components/VideoCanvas.scss';
 import { VIDEO_SIZE , INTERVAL ,PARTS_INDEX } from './config';
 import * as vector from './util/vector';
 import AssetLoader from './components/AssetLoader';
+import ani,{aniSprite} from './components/ani';
+import {scheduleDelegate} from './components/scheduleDelegate';
 
 const BASE_PARTS = PARTS_INDEX.leftEye;
 const VECTOR_PARTS = PARTS_INDEX.rightEye;
@@ -17,8 +19,33 @@ const VECTOR_PARTS = PARTS_INDEX.rightEye;
 class App extends Component {
   constructor(props) {
     super(props);
+
     this.assets =  [
-      {id:1,src:'./images/glasses_01.png',type:'image'},
+      {
+        id:1,
+        type:'image',
+        src:['./images/star_01.png',],
+        loop:true,
+        anim :[
+          { index:1 , pos: { x:0, y:0} , rot:0 , scale:{x:1,y:1} ,time:0.0 , },
+          { index:2 , pos: { x:-100, y:100} , rot:360 , scale:{x:1,y:1} ,time:0.5 , },
+          { index:3 , pos: { x:-100, y:200} , rot:180 , scale:{x:1,y:1} ,time:1.0 , },
+          { index:4 , pos: { x:100, y:0} , rot:200 , scale:{x:1,y:1} ,time:1.5 , },
+          { index:5 , pos: { x:-100, y:-200} , rot:360 , scale:{x:1,y:1} ,time:2.0 , },
+          { index:6 , pos: { x:0, y:100} , rot:180 , scale:{x:1,y:1} ,time:2.5 , },
+          { index:7 , pos: { x:0, y:0} , rot:0 , scale:{x:1,y:1} ,time:3.0 , }
+        ]
+      },
+      {
+        id:2,
+        type:'ani',
+        src:['./images/glasses_01.png',],
+        loop:true,
+        anim :[
+          { index:1 , pos: { x:0, y:0} , rot:0 , scale:{x:1,y:1} ,time:0.0 , },
+          { index:2 , pos: { x:0, y:60} , rot:90 , scale:{x:1,y:1} ,time:2.0 , }
+        ]
+      },
     ];
 
     this.state = {
@@ -28,10 +55,22 @@ class App extends Component {
       result : null,
       landmarks : null,
       positions : null,
-      assets : [],
+      anies : [],
+      selectedAssetId:1,
     };
+
     this.overlay = null;
-    
+
+    //イベントを設定
+    this.schedule = new scheduleDelegate();
+    this.schedule.setCallback({
+      time:5.0,
+      callback:()=>{console.log("callback1",5.0);}
+    })
+    this.schedule.setCallback({
+      time:5.0,
+      callback:()=>{console.log("callback2",5.0);}
+    })
   }
 
   setCanvas(ref) {
@@ -80,7 +119,6 @@ class App extends Component {
             const { width, height } = faceapi.getMediaDimensions(this.state.video);
             const resizedResults = [result].map(res => res.forSize(width, height));
             const landmarks = getLandmarks(resizedResults[0].faceLandmarks);
-
             this.setState({
               landmarks:landmarks,
               positions:resizedResults[0].landmarks.positions
@@ -89,7 +127,18 @@ class App extends Component {
         <AssetLoader
           assets = {this.assets}
           setImages = {(images)=>{
-            this.setState({assets:images});
+            let anies = _.map( images , image =>{
+              const value = _.filter( this.assets , asset =>{return asset.id==image.id });
+              return {
+                id:image.id,
+                sprite:new aniSprite( value[0] , image.image , this.schedule )
+              };
+            });
+            this.setState({
+              anies : anies,
+            });
+            //タイマー開始
+            this.schedule.start();
           }}
         >
           <FaceDetectView
@@ -99,9 +148,25 @@ class App extends Component {
             showEyes = {true}
             showPoints = {false}
             setRef = {(ref)=>{this.setOverlay(ref)}}
-            assets = {this.state.assets}
+            anies = { this.state.anies }
+            selectedAssetId ={this.state.selectedAssetId}
           />
         </AssetLoader>
+        <button 
+          style={{display:"none"}}
+          onClick={()=>{
+          if(this.schedule.isPlay) {
+            this.schedule.pause();
+          }else {
+            this.schedule.restart();
+          }
+        }}>play/stop</button>
+        <button onClick={()=>{
+          this.setState({selectedAssetId:1})
+        }}>star</button>
+        <button onClick={()=>{
+          this.setState({selectedAssetId:2})
+        }}>glasses</button>
       </div>
     );
   }
@@ -114,6 +179,7 @@ class FaceDetectView extends Component {
     super(props);
     this.canvas = null;
     this.tilt = null;
+    this.star = null;
 
     this.state ={
       points:[],
@@ -180,14 +246,14 @@ class FaceDetectView extends Component {
       x:distanceFromCenter * Math.cos(radian) + vec.x,
       y:distanceFromCenter * Math.sin(radian) + vec.y,
     }
-
+    
     //仮で画像描画
-    if(this.props.assets[0].image ) {
-      const img = this.props.assets[0].image;
+    const asset = _.filter(this.props.anies,(asset)=>{return asset.id==this.props.selectedAssetId})
+    if( asset.length ) {
+      const img = asset[0].sprite.img;
       let _x = vec2.x - (img.width/2);
       let _y = vec2.y - (img.height/2);
-      // setImage( this.canvas ,{x:_x , y:_y} , img );
-      setRotate( this.canvas ,{x:_x , y:_y}, this.tilt , img );
+      asset[0].sprite.setCanvas(this.canvas).transform({x:_x , y:_y}, this.tilt );
     }
     setPoint( this.canvas , {x:vec2.x , y:vec2.y} , `rgba(255,255,255)`);
   }
@@ -291,7 +357,7 @@ class FaceDetectView extends Component {
     
   }
 
-  //追加
+  //ポイントを追加
   addPoint (e) {
     var rect = this.canvas.getBoundingClientRect();
     // const x = (rect.width/2)+((rect.width/2) - (e.clientX - rect.left));

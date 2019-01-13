@@ -16,24 +16,25 @@ export default class AssetLoader extends Component {
   }
 
   loadImage( asset ){
-    let img = new Image();
-    img.onload = ( image ) =>{
-      let images = this.state.images
-      images.push({
-        id:asset.id,
-        image:img,
-        type:'image',
-      });
-      this.setState({
-        progress : this.state.progress+1,
-        images:images,
-      })
-      if( this.props.assets.length == this.state.progress ) {
-        this.props.setImages(this.state.images);
-        this.setState({done:true});
+    _.each ( asset.src , path => {
+      let img = new Image();
+      img.onload = ( image ) =>{
+        let images = this.state.images;
+        images.push({
+          id:asset.id,
+          image:img,
+        });
+        this.setState({
+          progress : this.state.progress+1,
+          images:images,
+        })
+        if( this.props.assets.length == this.state.progress ) {
+          this.props.setImages(this.state.images);
+          this.setState({done:true});
+        }
       }
-    }
-    img.src = asset.src;
+      img.src = path;
+    })
   }
 
   show () {
