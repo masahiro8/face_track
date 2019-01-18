@@ -231,16 +231,17 @@ export class aniSprite extends sprite {
     })
   }
 
-  transform ( pos , rot ) {
+  transform ( pos , tilt , deg ) {
+
     let _pos = pos;
-    let _rot = pos;
+    let _tilt = tilt;
 
     if( this.isPlay ) {
-      _pos = this.localMove(pos , 1);
-      _rot = this.localRotate(rot  , 1);  
+      _pos = this.localMove(pos , deg);
+      _tilt = this.localRotate(tilt );  
     }
     
-    this.move(_pos).rotate(_rot).emit();
+    this.move(_pos).rotate(_tilt).emit();
   }
 
   /**
@@ -248,14 +249,20 @@ export class aniSprite extends sprite {
    * @param {*} pos 
    * @param {int} index
    */
-  localMove ( pos , n = 0 ) {
+  localMove ( pos , theta) {
     if( 
       !_.has(this.value,"frames") || 
       !this.value.splineFrames[this.frame]
     ) return  pos;
+
+    const fpos = this.value.splineFrames[this.frame].pos;
+    //回転行列 > 左右反転してしまう
+    const _pos_x =  (Math.cos(theta)* fpos.x) + (Math.sin(theta)* fpos.y );
+    const _pos_y =  (-1 * Math.sin(theta)* fpos.x) + (Math.cos(theta)* fpos.y );
+
     const _pos = {
-      x : pos.x + this.value.splineFrames[this.frame].pos.x,
-      y : pos.y + this.value.splineFrames[this.frame].pos.y 
+      x : pos.x + _pos_x,
+      y : pos.y + _pos_y
     }
     return _pos;
   }

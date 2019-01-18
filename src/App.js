@@ -39,11 +39,13 @@ class App extends Component {
       {
         id:2,
         type:'ani',
-        src:['./images/glasses_01.png',],
+        src:['./images/arrow_left.png',],
         loop:true,
         anim :[
           { index:1 , pos: { x:0, y:0} , rot:0 , scale:{x:1,y:1} ,time:0.0 , },
-          { index:2 , pos: { x:0, y:60} , rot:90 , scale:{x:1,y:1} ,time:2.0 , }
+          { index:2 , pos: { x:10, y:0} , rot:45 , scale:{x:1,y:1} ,time:0.5 , },
+          { index:3 , pos: { x:80, y:0} , rot:90 , scale:{x:1,y:1} ,time:1.0 , },
+          { index:4 , pos: { x:90, y:0} , rot:95 , scale:{x:1,y:1} ,time:1.5 , },
         ]
       },
     ];
@@ -179,6 +181,8 @@ class FaceDetectView extends Component {
     super(props);
     this.canvas = null;
     this.tilt = null;
+    this.deg = null;
+    this.radian = null;
     this.star = null;
 
     this.state ={
@@ -217,9 +221,9 @@ class FaceDetectView extends Component {
     const _end = vector.shiftBase( begin , end);
     //なす角
     const _crossProduct = vector.crossProduct(_end,{x:100,y:0});
-    const radian = Math.acos(vector.tilt(_end));
-    const deg = radian*(180/Math.PI);
-    this.tilt = _crossProduct<0?radian:-deg*(Math.PI/180);
+    this.radian = Math.acos(vector.tilt(_end));
+    this.deg = this.radian*(180/Math.PI);
+    this.tilt = _crossProduct<0?this.radian:-this.deg*(Math.PI/180);
   }
 
   //描画
@@ -253,7 +257,7 @@ class FaceDetectView extends Component {
       const img = asset[0].sprite.img;
       let _x = vec2.x - (img.width/2);
       let _y = vec2.y - (img.height/2);
-      asset[0].sprite.setCanvas(this.canvas).transform({x:_x , y:_y}, this.tilt );
+      asset[0].sprite.setCanvas(this.canvas).transform({x:_x , y:_y}, this.tilt , -this.tilt );
     }
     setPoint( this.canvas , {x:vec2.x , y:vec2.y} , `rgba(255,255,255)`);
   }
