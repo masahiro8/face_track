@@ -198,6 +198,8 @@ export class aniSprite extends sprite {
       return { index :index , pos :{x:x,y:y} };
     });
 
+    list.reverse();//回転変換を使う場合はフレーム順を変える
+
     this.value.splineFrames = list.map(( val  , index  ) =>{
       return { index :val.index ,pos:val.pos  ,rot:rots[index].rot};
     })
