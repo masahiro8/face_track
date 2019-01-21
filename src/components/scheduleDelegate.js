@@ -14,7 +14,7 @@ export class scheduleDelegate {
   }
 
   init(){
-    console.log("init schedule delegate");
+    //console.log("init schedule delegate");
   }
 
   update () {

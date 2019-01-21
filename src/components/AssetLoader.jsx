@@ -38,7 +38,9 @@ export default class AssetLoader extends Component {
   }
 
   show () {
-    if ( this.state.done )  return <div>{this.props.children}</div> 
+    if ( this.state.done ) {
+      return (<div>{this.props.view()}</div>)
+    }
     return null
   }
 

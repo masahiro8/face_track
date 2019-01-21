@@ -25,7 +25,7 @@ class App extends Component {
         id:1,
         type:'image',
         src:['./images/star_01.png',],
-        loop:true,
+        tiltFlag:true,
         anim :[
           { index:1 , pos: { x:0, y:0} , rot:0 , scale:{x:1,y:1} ,time:0.0 , },
           { index:2 , pos: { x:-100, y:100} , rot:360 , scale:{x:1,y:1} ,time:0.5 , },
@@ -40,13 +40,52 @@ class App extends Component {
         id:2,
         type:'ani',
         src:['./images/arrow_left.png',],
-        loop:true,
+        tiltFlag:true,
         anim :[
           { index:1 , pos: { x:0, y:0} , rot:0 , scale:{x:1,y:1} ,time:0.0 , },
           { index:2 , pos: { x:10, y:0} , rot:45 , scale:{x:1,y:1} ,time:0.5 , },
           { index:3 , pos: { x:80, y:0} , rot:90 , scale:{x:1,y:1} ,time:1.0 , },
           { index:4 , pos: { x:90, y:0} , rot:95 , scale:{x:1,y:1} ,time:1.5 , },
         ]
+      },
+      {
+        id:3,
+        type:'ani',
+        src:['./images/arrow_left.png',],
+        tiltFlag:false,
+        anim :[
+          { index:1 , pos: { x:0, y:0} , rot:0 , scale:{x:1,y:1} ,time:0.0 , },
+        ]
+      },
+    ];
+
+    this.schedules = [
+      {
+        start:1.0,
+        end:2.0,
+        asset:1,
+        position:{
+          x:null,
+          y:null
+        }
+      },
+      {
+        start:3.0,
+        end:4.0,
+        asset:2,
+        position:{
+          x:null,
+          y:null
+        }
+      },
+      {
+        start:5.0,
+        end:6.0,
+        asset:3,
+        position:{
+          x:null,
+          y:null
+        } 
       },
     ];
 
@@ -65,14 +104,22 @@ class App extends Component {
 
     //イベントを設定
     this.schedule = new scheduleDelegate();
-    this.schedule.setCallback({
-      time:5.0,
-      callback:()=>{console.log("callback1",5.0);}
+    _.each( this.schedules , val =>{
+      this.schedule.setCallback({
+        time:val.start,
+        callback:()=>{
+          console.log("start",val.asset ,val.start);
+          
+        }
+      })
+      this.schedule.setCallback({
+        time:val.end,
+        callback:()=>{
+          console.log("end",val.asset ,val.end);
+        }
+      })
     })
-    this.schedule.setCallback({
-      time:5.0,
-      callback:()=>{console.log("callback2",5.0);}
-    })
+    this.schedule.start();
   }
 
   setCanvas(ref) {
@@ -84,7 +131,7 @@ class App extends Component {
   setVideo(ref) {
     if (this.state.video !== ref && ref) {
       this.setState({ video: ref });
-      console.log("setVideo " );
+      //console.log("setVideo " );
     }
   }
 
@@ -92,7 +139,7 @@ class App extends Component {
     if (this.state.overlay !== ref && ref) {
       this.setState({ overlay: ref });
       this.initCanvas();
-      console.log("setOverlay " );
+      //console.log("setOverlay " );
     }
   }
 
@@ -142,18 +189,21 @@ class App extends Component {
             //タイマー開始
             this.schedule.start();
           }}
-        >
-          <FaceDetectView
-            video = {this.state.video}
-            landmarks ={this.state.landmarks}
-            positions = {this.state.positions}
-            showEyes = {true}
-            showPoints = {false}
-            setRef = {(ref)=>{this.setOverlay(ref)}}
-            anies = { this.state.anies }
-            selectedAssetId ={this.state.selectedAssetId}
-          />
-        </AssetLoader>
+          view = {() => {
+            return(
+              <FaceDetectView
+                video = {this.state.video}
+                landmarks ={this.state.landmarks}
+                positions = {this.state.positions}
+                showEyes = {true}
+                showPoints = {false}
+                setRef = {(ref)=>{this.setOverlay(ref)}}
+                anies = {this.state.anies}
+                selectedAssetId ={this.state.selectedAssetId}
+              />
+            );
+          }}
+        ></AssetLoader>
         <button 
           style={{display:"none"}}
           onClick={()=>{
@@ -169,6 +219,9 @@ class App extends Component {
         <button onClick={()=>{
           this.setState({selectedAssetId:2})
         }}>glasses</button>
+        <button onClick={()=>{
+          this.setState({selectedAssetId:3})
+        }}>star2</button>
       </div>
     );
   }
@@ -185,6 +238,11 @@ class FaceDetectView extends Component {
     this.radian = null;
     this.star = null;
 
+    //ローパスフィルタ用
+    this.positions = Array.apply(null,new Array(68));
+    this.positions[VECTOR_PARTS] = {x:0,y:0};
+    this.positions[BASE_PARTS] = {x:0,y:0};
+
     this.state ={
       points:[],
       tilt:null,
@@ -195,15 +253,24 @@ class FaceDetectView extends Component {
     if(nextProps.landmarks) {
       this.clearCanvas();
 
-      //傾き
-      this.detectTilt(nextProps.positions[VECTOR_PARTS],nextProps.positions[BASE_PARTS]);
+      //平均化ローパスフィルタ
+      if( this.props.positions ) {
+        this.positions[VECTOR_PARTS] = this.lowpathFilter(this.props.positions[VECTOR_PARTS] , nextProps.positions[VECTOR_PARTS]);
+        this.positions[BASE_PARTS]   = this.lowpathFilter(this.props.positions[BASE_PARTS] , nextProps.positions[BASE_PARTS]);
+      }else {
+        //通常
+        this.positions[VECTOR_PARTS] = nextProps.positions[VECTOR_PARTS];
+        this.positions[BASE_PARTS]   = nextProps.positions[BASE_PARTS];
+      }
+
+      this.detectTilt(this.positions[VECTOR_PARTS],this.positions[BASE_PARTS]);
 
       if(this.props.showEyes) this.drawPoints();
       if(this.props.showPoints) this.drawParts();
       if(this.state.points.length) {
         _.each ( this.state.points ,  ( point , index ) =>{
-          this.initPointRate( point,index ,nextProps.positions[BASE_PARTS] , nextProps.positions[VECTOR_PARTS]);
-          this.setPoint(point,index ,nextProps.positions[BASE_PARTS] , nextProps.positions[VECTOR_PARTS]);
+          this.initPointRate( point,index ,this.positions[BASE_PARTS] , this.positions[VECTOR_PARTS]);
+          this.setPoint(point,index ,this.positions[BASE_PARTS] , this.positions[VECTOR_PARTS]);
         })
       }
     }
@@ -212,6 +279,14 @@ class FaceDetectView extends Component {
   setCanvas ( ref ) {
     this.canvas = ref;
     this.props.setRef(ref);
+  }
+
+  //ローパス
+  lowpathFilter (prev,next) {
+    return {
+      x:(prev.x*0.9)+(next.x*0.1),
+      y:(prev.y*0.9)+(next.y*0.1),
+    }
   }
 
   //傾き検出
@@ -257,7 +332,11 @@ class FaceDetectView extends Component {
       const img = asset[0].sprite.img;
       let _x = vec2.x - (img.width/2);
       let _y = vec2.y - (img.height/2);
-      asset[0].sprite.setCanvas(this.canvas).transform({x:_x , y:_y}, this.tilt , -this.tilt );
+      asset[0].sprite.setCanvas(this.canvas).transform(
+        {x:_x , y:_y},
+        this.tilt,
+        -this.tilt,
+      );
     }
     setPoint( this.canvas , {x:vec2.x , y:vec2.y} , `rgba(255,255,255)`);
   }
@@ -286,14 +365,6 @@ class FaceDetectView extends Component {
     const vec_length = vector.distance(_begin , _end);
     const rate_vec_point = dotDistance/vec_length;//正しい
     const rate_from_edge = distanceFromEdge/vec_length;
-    
-    // console.log("cos_theta ",
-    //   vector.vectorLength(_end),
-    //   vector.vectorLength(_myPoint) , 
-    //   cos_theta ,
-    //   _theta*180.0/Math.PI,
-    //   vector.dotProduct(_end,_myPoint),
-    // );
 
     //初期値を設定
     let _points = this.state.points; 
@@ -376,7 +447,7 @@ class FaceDetectView extends Component {
     this.setState({
       points : _points
     });
-    console.log("points " , _points );
+    //console.log("points " , _points );
   }
 
   render(){

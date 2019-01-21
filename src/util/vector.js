@@ -7,7 +7,7 @@
       return Math.sqrt( v.x * v.x + v.y * v.y);
       //return Math.pow( ( v.x * v.x ) + ( v.y * v.y ), 0.5 );
     }
-    //内積:正しい
+    //内積
     export const dotProduct = (a,b) =>{
       return a.x * b.x + a.y * b.y;
     }
@@ -30,7 +30,7 @@
     export const vecPos = (p,v) => {
       return {x:p.x/v,y:p.y*v};
     }
-    //２点間の距離:正しい
+    //２点間の距離
     export const distance = (p1, p2) => {
       return Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2));
     };

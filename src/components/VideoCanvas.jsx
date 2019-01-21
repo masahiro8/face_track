@@ -11,7 +11,7 @@ class Video extends Component {
 
   async componentDidMount() {
     await this.initCam();
-    console.log("detect init");
+    //console.log("detect init");
   }
 
   async initCam() {
@@ -30,7 +30,7 @@ class Video extends Component {
       this.media.then(stream => {
         this.selfRef.srcObject = stream;
         this.selfRef.onloadedmetadata = function(e) {
-          console.log("Onload video" , e);
+          //console.log("Onload video" , e);
           resolve();
         };
       });

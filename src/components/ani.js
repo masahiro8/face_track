@@ -146,13 +146,11 @@ export class aniSprite extends sprite {
 
     let  _anim =  this.value.anim;
 
-    //回転
     const getValuePerFrame = ( current , next , frames , index )=>{
       return current + ((( next - current ) /frames ) * index ) ;
     }
 
     let rots = [];
-    let rots_index = 0;
     _anim.map(( val , index  ) => {
       if( _anim[index+1] ) {
         const _time = _anim[index+1].time - _anim[index].time;
@@ -165,6 +163,10 @@ export class aniSprite extends sprite {
         rots = rots.concat(list);
       }
     })
+
+    if( _anim.length ==  1 ) {
+      rots[0] = { rot : _anim[0].rot };
+    }
 
     //位置の曲線変換
     let posx = [];
@@ -198,12 +200,12 @@ export class aniSprite extends sprite {
       return { index :index , pos :{x:x,y:y} };
     });
 
-    list.reverse();//回転変換を使う場合はフレーム順を変える
+    if( this.value.tiltFlag ) list.reverse();//回転変換を使う場合はフレーム順を変える
 
     this.value.splineFrames = list.map(( val  , index  ) =>{
       return { index :val.index ,pos:val.pos  ,rot:rots[index].rot};
     })
-    console.log("this.value.splineFrames " ,this.value.splineFrames);
+    //console.log("this.value.splineFrames " ,this.value.splineFrames);
   }
 
   /**
@@ -238,11 +240,12 @@ export class aniSprite extends sprite {
     let _pos = pos;
     let _tilt = tilt;
 
-    if( this.isPlay ) {
-      _pos = this.localMove(pos , deg);
-      _tilt = this.localRotate(tilt );  
-    }
-    
+    _pos = this.localMove(pos , deg);
+    _tilt = this.localRotate(tilt );
+
+    //180° => ラジアン
+    if( !this.value.tiltFlag ) _tilt = 180*Math.PI/180;
+
     this.move(_pos).rotate(_tilt).emit();
   }
 
@@ -252,21 +255,30 @@ export class aniSprite extends sprite {
    * @param {int} index
    */
   localMove ( pos , theta) {
+    
     if( 
       !_.has(this.value,"frames") || 
       !this.value.splineFrames[this.frame]
     ) return  pos;
 
     const fpos = this.value.splineFrames[this.frame].pos;
-    //回転行列 > 左右反転してしまう
+
+    //回転行列
     const _pos_x =  (Math.cos(theta)* fpos.x) + (Math.sin(theta)* fpos.y );
     const _pos_y =  (-1 * Math.sin(theta)* fpos.x) + (Math.cos(theta)* fpos.y );
 
-    const _pos = {
-      x : pos.x + _pos_x,
-      y : pos.y + _pos_y
+    if( !this.value.tiltFlag ) {
+      return {
+        x : pos.x + fpos.x,
+        y : pos.y + fpos.y
+      }
+    } else  {
+      return {
+        x : pos.x + _pos_x,
+        y : pos.y + _pos_y
+      }
     }
-    return _pos;
+
   }
 
   /**
@@ -275,10 +287,14 @@ export class aniSprite extends sprite {
    * @param {int} index
    */
   localRotate ( rot ,  n  = 0) {
-    if( !_.has(
-      this.value,"anim") || 
-      this.value.splineFrames[this.frame]
+    if( 
+      !_.has(this.value,"anim") || 
+      !this.value.splineFrames[this.frame]||
+      !_.has(this.value.splineFrames[this.frame],"rot")
     ) return  rot;
+
+    if(!this.value.tiltFlag) return  rot;
+    
     return rot + this.value.splineFrames[n].rot;
   }
 }
