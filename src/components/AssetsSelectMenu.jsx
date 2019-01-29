@@ -22,19 +22,22 @@ export default class AssetsSelectMenu extends Component {
   }
 
   render(){
+    const show = () =>{
+      return this.props.editMode?{display:'block'}:{display:'none'};
+    }
     return(
       <AssetLoader
-          assets = {this.props.assets}
-          progress = {( progress )=>{}}
-          done  = {()=>{}}
-          view = {( anies ) => {
-            return(
-              <React.Fragment>
-                { this.GetMenu( anies )}
-              </React.Fragment>
-            );
-          }}
-        ></AssetLoader>
+        assets = {this.props.assets}
+        progress = {( progress )=>{}}
+        done  = {()=>{}}
+        view = {( anies ) => {  
+          return(
+            <div style = {show()}>
+              { this.GetMenu( anies )}
+            </div>
+          );
+        }}
+      ></AssetLoader>
     )
   }
 }

@@ -233,6 +233,7 @@ class App extends Component {
         }}>star2</button>
 
         <AssetsSelectMenu 
+          editMode = {this.state.editMode}
           assets = { this.assets }
           callback = {(id)=>{
             this.setState({selectedAssetId:id})
