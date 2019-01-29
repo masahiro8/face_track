@@ -131,6 +131,10 @@ export class aniSprite extends sprite {
 
   }
 
+  getImageSrc () {
+    return this.sprite.value.src;
+  }
+
   update () {
     window.requestAnimationFrame(this.update.bind(this));
     this.playAnims();

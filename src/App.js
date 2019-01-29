@@ -3,11 +3,11 @@ import * as faceapi from "face-api.js/dist/face-api.js";
 import * as _ from 'lodash';
 import {FaceDetect} from './components/FaceDetect';
 import {FaceDetectView} from './components/FaceDetectView';
-import {ClickDetect} from './components/ClickDetect';
 import {VideoImage} from './components/VideoCanvas';
 import { getLandmarks } from './canvas.point';
 import { VIDEO_SIZE , INTERVAL, PARTS_INDEX  } from './config';
 import AssetLoader from './components/AssetLoader';
+import AssetsSelectMenu from './components/AssetsSelectMenu';
 import {aniSprite} from './components/ani';
 import {scheduleDelegate} from './components/scheduleDelegate';
 
@@ -98,6 +98,7 @@ class App extends Component {
       anies : [],
       selectedAssetId:1,
       points:[],//仮でアセットの中心位置を保持
+      editMode : true,
     };
 
     this.partsConfig = {
@@ -186,15 +187,20 @@ class App extends Component {
             return(
               <React.Fragment>
                 <FaceDetectView
-                  video = {this.state.video}
-                  partsConfig = {this.partsConfig}
-                  landmarks ={this.state.landmarks}
-                  positions = {this.state.positions}
-                  showEyes = {true}
-                  showPoints = {false}
-                  setRef = {(ref)=>{this.setOverlay(ref)}}
-                  anies = {anies}
-                  selectedAssetId ={this.state.selectedAssetId}
+                  showEyes = {false}//眼の点を表示 ediMode=trueの場合はtrue
+                  showPoints = {false} //クリック点を表示
+                  editMode = {this.state.editMode} //編集モード
+                  multiPoints = {false} //複数ポイント作成
+                  editCallback = {(points)=>{
+                    console.log( "edit  callback " , points );
+                  }}//クリック点の座標データ
+                  video = {this.state.video}//videoタグ
+                  setRef = {(ref)=>{this.setOverlay(ref)}}//canvasタグ
+                  partsConfig = {this.partsConfig}//基準パーツ
+                  landmarks ={this.state.landmarks}//検出パーツ
+                  positions = {this.state.positions}//描画用の点
+                  anies = {anies}//AssetLoaderから返されるアニメーションデータ
+                  selectedAssetId ={this.state.selectedAssetId}//表示するアセットid
                 />
               </React.Fragment>
             );
@@ -211,6 +217,10 @@ class App extends Component {
         }}>play/stop</button>
 
         <button onClick={()=>{
+          this.setState({editMode:!this.state.editMode})
+        }}>editMode</button>
+
+        <button onClick={()=>{
           this.setState({selectedAssetId:1})
         }}>star</button>
         
@@ -221,6 +231,13 @@ class App extends Component {
         <button onClick={()=>{
           this.setState({selectedAssetId:3})
         }}>star2</button>
+
+        <AssetsSelectMenu 
+          assets = { this.assets }
+          callback = {(id)=>{
+            this.setState({selectedAssetId:id})
+          }}
+          />
         
       </div>
     );

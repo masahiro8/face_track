@@ -47,8 +47,8 @@ export class FaceDetectView extends Component {
 
       this.detectTilt(this.positions[this.VECTOR_PARTS],this.positions[this.BASE_PARTS]);
 
-      if(this.props.showEyes) this.drawPoints();
-      if(this.props.showPoints) this.drawParts();
+      if(this.props.showEyes || this.props.editMode ) this.drawPoints();
+      if(this.props.showPoints || this.props.editMode ) this.drawParts();
       if(this.state.points.length) {
         _.each ( this.state.points ,  ( point , index ) =>{
           this.initPointRate( point,index ,this.positions[this.BASE_PARTS] , this.positions[this.VECTOR_PARTS]);
@@ -120,7 +120,10 @@ export class FaceDetectView extends Component {
         -this.tilt,
       );
     }
-    setPoint( this.canvas , {x:vec2.x , y:vec2.y} , `rgba(255,255,255)`);
+
+    if( this.props.editMode ) {
+      setPoint( this.canvas , {x:vec2.x , y:vec2.y} , `rgba(255,255,255)`);
+    }
   }
 
   //初期値
@@ -149,18 +152,27 @@ export class FaceDetectView extends Component {
     const rate_from_edge = distanceFromEdge/vec_length;
 
     //初期値を設定
-    let _points = this.state.points; 
-    _points[index].bool = {
+    let _point = this.state.points[index];
+    _point.bool = {
       dot : _dotProduct<0?false:true,
       cross : _crossProduct<0?true:false,
     }
-    _points[index].rate = {
+    _point.rate = {
       dot : _dotProduct<0?-rate_vec_point:rate_vec_point,
       cross : rate_from_edge,
     }
+
+    let _points =  this.state.points;
+    _points[index] =  _.clone(_point);
     this.setState({
       points:_points,
     })
+
+    //編集モード
+    if(this.props.editMode){
+      _point.assetId = this.props.selectedAssetId;
+      this.props.editCallback(_point);
+    }
   }
 
   //キャンバスをクリア
@@ -217,7 +229,22 @@ export class FaceDetectView extends Component {
   //ポイントを追加
   addPoint (e) {
     var rect = this.canvas.getBoundingClientRect();
-    // const x = (rect.width/2)+((rect.width/2) - (e.clientX - rect.left));
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    let _points = this.state.points;
+    _points[0] = {
+      vector:{x:x,y:y},
+      rate:null,
+    };
+    this.setState({
+      points : _points
+    });
+  }
+
+  //ポイントを追加（複数モード）
+  addMultiPoints (e) {
+    var rect = this.canvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
 
@@ -229,7 +256,6 @@ export class FaceDetectView extends Component {
     this.setState({
       points : _points
     });
-    //console.log("points " , _points );
   }
 
   render(){
@@ -242,7 +268,11 @@ export class FaceDetectView extends Component {
         height={VIDEO_SIZE.height}
         className = {styles["overlayCanvas"]}
         onClick = {(e)=>{
-          this.addPoint(e);
+          if( this.props.multiPoints ) {
+            this.addMultiPoints(e);
+          }else {
+            this.addPoint(e);
+          }
         }}
       />
     )
