@@ -3,6 +3,17 @@
   height: 480px;
 }
 
+
+:local(.overlayClickable) {
+  @include video;
+  position: absolute;
+  z-index: 2;
+  top:0;
+  left:0;
+  // border:1px solid red;
+  // transform:scale(-1,1);
+}
+
 :local(.overlayCanvas) {
   @include video;
   position: absolute;
