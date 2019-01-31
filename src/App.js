@@ -8,6 +8,7 @@ import { getLandmarks } from './canvas.point';
 import { VIDEO_SIZE , INTERVAL, PARTS_INDEX  } from './config';
 import AssetLoader from './components/AssetLoader';
 import AssetsSelectMenu from './components/AssetsSelectMenu';
+import AssetsManager from './components/AssetsManager';
 import {aniSprite} from './components/ani';
 import {scheduleDelegate} from './components/scheduleDelegate';
 
@@ -96,9 +97,12 @@ class App extends Component {
       landmarks : null,
       positions : null,
       anies : [],
-      selectedAssetId:1,
-      points:[],//仮でアセットの中心位置を保持
       editMode : true,
+      data  : { //ロードするアセット
+        assetId : 1,
+        rate : {},
+        bool : {},
+      }
     };
 
     this.partsConfig = {
@@ -193,6 +197,12 @@ class App extends Component {
                   multiPoints = {false} //複数ポイント作成
                   editCallback = {(points)=>{
                     console.log( "edit  callback " , points );
+                    //アセットを更新
+                    let data = this.state.data;
+                    data.bool = points.bool;
+                    data.rate = points.rate;
+                    data.assetId =  points.assetId;
+                    this.setState({data});
                   }}//クリック点の座標データ
                   video = {this.state.video}//videoタグ
                   setRef = {(ref)=>{this.setOverlay(ref)}}//canvasタグ
@@ -200,14 +210,13 @@ class App extends Component {
                   landmarks ={this.state.landmarks}//検出パーツ
                   positions = {this.state.positions}//描画用の点
                   anies = {anies}//AssetLoaderから返されるアニメーションデータ
-                  selectedAssetId ={this.state.selectedAssetId}//表示するアセットid
+                  loadData = {this.state.data}
                 />
               </React.Fragment>
             );
           }}
         ></AssetLoader>
         <button 
-          style={{display:"none"}}
           onClick={()=>{
           if(this.schedule.isPlay) {
             this.schedule.pause();
@@ -220,25 +229,23 @@ class App extends Component {
           this.setState({editMode:!this.state.editMode})
         }}>editMode</button>
 
-        <button onClick={()=>{
-          this.setState({selectedAssetId:1})
-        }}>star</button>
-        
-        <button onClick={()=>{
-          this.setState({selectedAssetId:2})
-        }}>glasses</button>
-        
-        <button onClick={()=>{
-          this.setState({selectedAssetId:3})
-        }}>star2</button>
-
         <AssetsSelectMenu 
           editMode = {this.state.editMode}
           assets = { this.assets }
           callback = {(id)=>{
-            this.setState({selectedAssetId:id})
+            let data = _.clone(this.state.data);
+            data.assetId = id;
+            this.setState({data});
           }}
           />
+        
+        <AssetsManager 
+          assets = { this.assets }
+          currentAsset = { this.state.data }
+          callback  = {( data )=>{
+            this.setState({data});
+          }}
+        />
         
       </div>
     );

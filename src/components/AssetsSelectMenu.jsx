@@ -45,7 +45,7 @@ export default class AssetsSelectMenu extends Component {
 const AssetButton = ({ id , src , callback }) =>{
   return(
     <div 
-      style={{width:"64px"}}
+      style={{width:"48px"}}
       onClick={(e)=>{ callback(id) }}>
       <img 
         style={{width:'inherit'}}

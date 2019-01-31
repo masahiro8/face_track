@@ -26,12 +26,25 @@ export class FaceDetectView extends Component {
     this.positions[this.BASE_PARTS] = {x:0,y:0};
 
     this.state ={
+      assetId:null,
       points:[],
       tilt:null,
     };
   }
 
   componentWillReceiveProps(nextProps){
+
+    //ロードされたデータ
+    if( JSON.stringify(nextProps.loadData) !== JSON.stringify(this.props.loadData)) {
+      console.log("points" , this.state.points);
+      let points = this.state.points;
+      points[0] = nextProps.loadData;
+      this.setState({
+        points:points,
+        assetId:nextProps.loadData.assetId,
+      });
+    }
+
     if(nextProps.landmarks) {
       this.clearCanvas();
 
@@ -48,7 +61,7 @@ export class FaceDetectView extends Component {
       this.detectTilt(this.positions[this.VECTOR_PARTS],this.positions[this.BASE_PARTS]);
 
       if(this.props.showEyes || this.props.editMode ) this.drawPoints();
-      if(this.props.showPoints || this.props.editMode ) this.drawParts();
+      if(this.props.showPoints ) this.drawParts();
       if(this.state.points.length) {
         _.each ( this.state.points ,  ( point , index ) =>{
           this.initPointRate( point,index ,this.positions[this.BASE_PARTS] , this.positions[this.VECTOR_PARTS]);
@@ -56,6 +69,7 @@ export class FaceDetectView extends Component {
         })
       }
     }
+
   }
 
   setCanvas ( ref ) {
@@ -109,7 +123,7 @@ export class FaceDetectView extends Component {
     }
     
     //仮で画像描画
-    const asset = _.filter(this.props.anies,(asset)=>{return asset.id==this.props.selectedAssetId})
+    const asset = _.filter(this.props.anies,(asset)=>{return asset.id==this.state.assetId})
     if( asset.length ) {
       const img = asset[0].sprite.img;
       let _x = vec2.x - (img.width/2);
@@ -124,6 +138,7 @@ export class FaceDetectView extends Component {
     if( this.props.editMode ) {
       setPoint( this.canvas , {x:vec2.x , y:vec2.y} , `rgba(255,255,255)`);
     }
+
   }
 
   //初期値
@@ -170,7 +185,7 @@ export class FaceDetectView extends Component {
 
     //編集モード
     if(this.props.editMode){
-      _point.assetId = this.props.selectedAssetId;
+      _point.assetId = this.state.assetId;
       this.props.editCallback(_point);
     }
   }
@@ -240,6 +255,7 @@ export class FaceDetectView extends Component {
     this.setState({
       points : _points
     });
+    console.log("setpoint" , _points);
   }
 
   //ポイントを追加（複数モード）
