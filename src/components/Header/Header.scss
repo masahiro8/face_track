@@ -1,0 +1,85 @@
+@import "../../common/scss/color.scss";
+
+@mixin Header  {
+  width:100%;
+  height:64px;
+  position: fixed;
+  top:0;
+  z-index: 1;
+  background-color: $col-base-20;
+
+  ul {
+    display: flex;
+    list-style: none;
+  }
+}
+
+$radius : 6px;
+
+@mixin HeaderItem {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  width:48px;
+  height:32px;
+  border-top:1px solid $col-base-10;
+  border-bottom:1px solid $col-base-10;
+  border-right:1px solid $col-base-10;
+  background-color: $col-base-40;
+  position: relative;
+  opacity: .3;
+
+  &:first-child {
+    border-left:1px solid $col-base-10;
+    border-bottom-left-radius: $radius ;
+    border-top-left-radius: $radius ;
+  }
+
+  &:last-child {
+    border-bottom-right-radius: $radius ;
+    border-top-right-radius: $radius ;
+  }
+
+  &.show {
+    opacity: 1;
+  }
+
+  .label  {
+    text-align: center;
+    font-size:8px;
+    color: white;
+    padding:4px;
+    margin:0;
+    position: absolute;
+    width: 100%;
+    opacity: 0;
+    transition: all .1s ease-in;
+    transform: translateY(16  px);
+  }
+
+  .icon {
+    width: 16px;
+    height: 16px;
+    opacity: .5;
+  }
+
+  &:hover {
+    background-color: $col-base-50;
+    cursor: pointer;
+    .icon {opacity: 1;}
+    .label { 
+      opacity: 1;
+      transform: translateY(18px);
+    }
+
+  }
+}
+
+:local(.Header) {
+  @include Header;
+}
+
+:local(.HeaderItem) {
+  @include HeaderItem;
+}

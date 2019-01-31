@@ -20,7 +20,8 @@ class Video extends Component {
     this.media = navigator.mediaDevices.getUserMedia({
       audio: false,
       video: {
-        facingMode: "environment",
+        // facingMode: "environment",
+        facingMode: "user",
         width: this.props.size.width, 
         // height: this.props.size.height,
       },

@@ -60,7 +60,7 @@ export default class AssetLoader extends Component {
 
   show () {
     if ( this.state.done ) {
-      return (<div>{this.props.view(this.state.anies)}</div>)
+      return this.props.view(this.state.anies)
     }
     return null
   }

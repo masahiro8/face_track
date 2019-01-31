@@ -1,0 +1,26 @@
+@import "../../common/scss/color.scss";
+
+@mixin List {
+  width:128px;
+  background-color: $col-base-15;
+  transition: all .1s ease-in;
+  overflow: auto;
+}
+
+@mixin ListItem {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 128px;
+  height:64px;
+
+  img {
+    width: 32px;
+    height:32px;
+  }
+
+  &:hover {
+    cursor: pointer;
+    background-color: $col-base-30;
+  }
+}

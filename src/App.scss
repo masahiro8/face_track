@@ -1,15 +1,18 @@
+@import '../node_modules/normalize.css/normalize.css';
+@import "./common/scss/color.scss";
 
-@mixin video {
-  width: 480px;
-  transform:scale(-1,1);
+html,body {
+  background-color: $col-base-10;
 }
 
-:local(video){
-  @include video;
-  //visibility: hidden;
+:local(.viewer)  {
+  margin:auto;
+  position: relative;
+  margin-top:56px;
+  width: 656px;
+  padding:8px;
 }
 
-:local(canvas){
-  @include video;
-  visibility: hidden;
+:local(.header) {
+  
 }

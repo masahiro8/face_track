@@ -1,0 +1,20 @@
+@import "../../common/scss/color.scss";
+@import "../../common/scss/List.scss";
+
+:local(.List) {
+  @include List;
+  width:128px;
+  height:calc(100vh - 64px);
+  position: fixed;
+  top:64px;
+  left:0;
+  transform: translateX(-128px);
+
+  &.show {
+    transform: translateX(0);
+  }
+}
+
+:local(.ListItem) {
+  @include ListItem;
+}
