@@ -2,7 +2,7 @@ import React, { Component } from "react";
 import * as faceapi from "face-api.js/dist/face-api.js";
 import * as _ from "lodash";
 import { FaceDetect } from "./components/FaceDetect";
-import { FaceDetectView } from "./components/FaceDetectView";
+import { Canvas3DView } from "./components/Canvas3DView";
 import { VideoImage } from "./components/VideoCanvas";
 import { getLandmarks } from "./canvas.point";
 import { VIDEO_SIZE, INTERVAL, PARTS_INDEX } from "./config";
@@ -14,156 +14,14 @@ import { scheduleDelegate } from "./components/scheduleDelegate";
 import styles from "./App.scss";
 import { Header, HeaderItem } from "./components/Header/Header";
 import { icons } from "./icon/Icons";
+import { assets } from "./assets/assets.js";
 
 class App extends Component {
   constructor(props) {
     super(props);
 
-    //使用するアセット
-    this.assets = [
-      {
-        id: 1,
-        type: "image",
-        src: ["./images/star_01.png"],
-        tiltFlag: true,
-        anim: [
-          {
-            index: 1,
-            pos: { x: 0, y: 0 },
-            rot: 0,
-            scale: { x: 1, y: 1 },
-            time: 0.0
-          },
-          {
-            index: 2,
-            pos: { x: -100, y: 100 },
-            rot: 360,
-            scale: { x: 1, y: 1 },
-            time: 0.5
-          },
-          {
-            index: 3,
-            pos: { x: -100, y: 200 },
-            rot: 180,
-            scale: { x: 1, y: 1 },
-            time: 1.0
-          },
-          {
-            index: 4,
-            pos: { x: 100, y: 0 },
-            rot: 200,
-            scale: { x: 1, y: 1 },
-            time: 1.5
-          },
-          {
-            index: 5,
-            pos: { x: -100, y: -200 },
-            rot: 360,
-            scale: { x: 1, y: 1 },
-            time: 2.0
-          },
-          {
-            index: 6,
-            pos: { x: 0, y: 100 },
-            rot: 180,
-            scale: { x: 1, y: 1 },
-            time: 2.5
-          },
-          {
-            index: 7,
-            pos: { x: 0, y: 0 },
-            rot: 0,
-            scale: { x: 1, y: 1 },
-            time: 3.0
-          }
-        ]
-      },
-      {
-        id: 2,
-        type: "ani",
-        src: ["./images/arrow_left.png"],
-        tiltFlag: true,
-        anim: [
-          {
-            index: 1,
-            pos: { x: 0, y: 0 },
-            rot: 0,
-            scale: { x: 1, y: 1 },
-            time: 0.0
-          },
-          {
-            index: 2,
-            pos: { x: 10, y: 0 },
-            rot: 45,
-            scale: { x: 1, y: 1 },
-            time: 0.5
-          },
-          {
-            index: 3,
-            pos: { x: 80, y: 0 },
-            rot: 90,
-            scale: { x: 1, y: 1 },
-            time: 1.0
-          },
-          {
-            index: 4,
-            pos: { x: 90, y: 0 },
-            rot: 95,
-            scale: { x: 1, y: 1 },
-            time: 1.5
-          }
-        ]
-      },
-      {
-        id: 3,
-        type: "ani",
-        src: ["./images/arrow_left.png"],
-        tiltFlag: false,
-        anim: [
-          {
-            index: 1,
-            pos: { x: 0, y: 0 },
-            rot: 0,
-            scale: { x: 1, y: 1 },
-            time: 0.0
-          }
-        ]
-      }
-    ];
-
-    //アセットの表示スケジュール(未実装)
-    //TODO:中心位置を設定する
-    // this.schedules = [
-    //   {
-    //     start:1.0,
-    //     end:2.0,
-    //     asset:1,
-    //     position:{
-    //       x:null,
-    //       y:null
-    //     }
-    //   },
-    //   {
-    //     start:3.0,
-    //     end:4.0,
-    //     asset:2,
-    //     position:{
-    //       x:null,
-    //       y:null
-    //     }
-    //   },
-    //   {
-    //     start:5.0,
-    //     end:6.0,
-    //     asset:3,
-    //     position:{
-    //       x:null,
-    //       y:null
-    //     }
-    //   },
-    // ];
-
     this.state = {
+      assets: assets,
       video: null,
       canvas: null,
       overlay: null,
@@ -186,6 +44,12 @@ class App extends Component {
       vector: PARTS_INDEX.rightEye
     };
 
+    this.partsConfig3D = {
+      base: PARTS_INDEX.leftEye,
+      vector: PARTS_INDEX.rightEye,
+      center: PARTS_INDEX.nose
+    };
+
     this.callback = {
       edit: () => {},
       assets: () => {
@@ -197,24 +61,6 @@ class App extends Component {
     };
 
     this.overlay = null;
-
-    //イベントを設定
-    // this.schedule = new scheduleDelegate();
-    // _.each( this.schedules , val =>{
-    //   this.schedule.setCallback({
-    //     time:val.start,
-    //     callback:()=>{
-    //       console.log("start",val.asset ,val.start);
-    //     }
-    //   })
-    //   this.schedule.setCallback({
-    //     time:val.end,
-    //     callback:()=>{
-    //       console.log("end",val.asset ,val.end);
-    //     }
-    //   })
-    // })
-    // this.schedule.start();
   }
 
   setCanvas(ref) {
@@ -295,19 +141,18 @@ class App extends Component {
             }}
           />
           <AssetLoader
-            assets={this.assets}
+            assets={this.state.assets}
             progress={progress => {}}
             done={() => {}}
             view={anies => {
               return (
                 <React.Fragment>
-                  <FaceDetectView
+                  <Canvas3DView
                     showEyes={false} //眼の点を表示 ediMode=trueの場合はtrue
                     showPoints={false} //クリック点を表示
                     editMode={this.state.editMode} //編集モード
                     multiPoints={false} //複数ポイント作成
                     editCallback={points => {
-                      console.log("edit  callback ", points);
                       //アセットを更新
                       let data = this.state.data;
                       data.bool = points.bool;
@@ -319,11 +164,11 @@ class App extends Component {
                     setRef={ref => {
                       this.setOverlay(ref);
                     }} //canvasタグ
-                    partsConfig={this.partsConfig} //基準パーツ
+                    partsConfig={this.partsConfig3D} //基準パーツ
                     landmarks={this.state.landmarks} //検出パーツ
                     positions={this.state.positions} //描画用の点
                     anies={anies} //AssetLoaderから返されるアニメーションデータ
-                    loadData={this.state.data}
+                    loadData={this.state.data} //スタンプデータ
                   />
                 </React.Fragment>
               );
@@ -333,7 +178,7 @@ class App extends Component {
 
         <AssetsSelectMenu
           show={this.state.editMode}
-          assets={this.assets}
+          assets={this.state.assets}
           callback={id => {
             let data = _.clone(this.state.data);
             data.assetId = id;
@@ -343,7 +188,7 @@ class App extends Component {
 
         <StampManager
           show={this.state.stampMode}
-          assets={this.assets}
+          assets={this.state.assets}
           currentAsset={this.state.data}
           callback={data => {
             this.setState({ data });
