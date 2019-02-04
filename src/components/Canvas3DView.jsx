@@ -68,19 +68,24 @@ export class Canvas3DView extends Component {
       this.positions[this.CENTER_PARTS] =
         nextProps.positions[this.CENTER_PARTS];
 
-      //傾き
-      this.tilt.z = Tilt.z(
-        this.positions[this.VECTOR_PARTS],
-        this.positions[this.BASE_PARTS]
-      );
+      // this.tilt.z = Tilt.z(
+      //   this.positions[this.VECTOR_PARTS],
+      //   this.positions[this.BASE_PARTS]
+      // );
 
-      this.tilt.y = Tilt.y(
-        this.positions[this.VECTOR_PARTS],
-        this.positions[this.BASE_PARTS],
-        this.positions[this.CENTER_PARTS]
-      );
+      // this.tilt.y = Tilt.y(
+      //   this.positions[this.VECTOR_PARTS],
+      //   this.positions[this.BASE_PARTS],
+      //   this.positions[this.CENTER_PARTS]
+      // );
 
-      this.tilt.x = Tilt.x(
+      // this.tilt.x = Tilt.x(
+      //   this.positions[this.VECTOR_PARTS],
+      //   this.positions[this.BASE_PARTS],
+      //   this.positions[this.CENTER_PARTS]
+      // );
+
+      this.tilt = Tilt.vec3(
         this.positions[this.VECTOR_PARTS],
         this.positions[this.BASE_PARTS],
         this.positions[this.CENTER_PARTS]
