@@ -6,7 +6,7 @@
 :local(.viewerCanvas) {
   padding:8px;
   position: absolute;
-  z-index: 1;
+  z-index: 2;
   top:0;
   left:0;
 }
@@ -17,25 +17,29 @@
   z-index: 2;
   top:0;
   left:0;
-  // border:1px solid red;
-  // transform:scale(-1,1);
 }
 
 :local(.overlayCanvas) {
   @include video;
-  // border:1px solid red;
-  // transform:scale(-1,1);
+
+}
+
+:local(.overlayWeb3D) {
+  @include video;
+  padding:8px;
+  position: absolute;
+  z-index: 1;
+  top:0;
+  left:0;
 }
 
 :local(.videoimage){
   position: relative;
   .video {
     @include video;
-    // transform:scale(-1,1);
   }
   .canvas {
     @include video;
-    // transform:scale(-1,1);
     top:0;
     left:0;
     position: absolute;

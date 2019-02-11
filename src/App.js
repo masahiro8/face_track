@@ -1,20 +1,24 @@
-import React, { Component } from "react";
-import * as faceapi from "face-api.js/dist/face-api.js";
-import * as _ from "lodash";
-import { FaceDetect } from "./components/FaceDetect";
-import { Canvas3DView } from "./components/Canvas3DView";
-import { VideoImage } from "./components/VideoCanvas";
-import { getLandmarks } from "./canvas.point";
-import { VIDEO_SIZE, INTERVAL, PARTS_INDEX } from "./config";
-import AssetLoader from "./components/AssetLoader";
-import AssetsSelectMenu from "./components/AssetsSelectMenu/AssetsSelectMenu";
-import StampManager from "./components/StampManager/StampManager";
-import { aniSprite } from "./components/ani";
-import { scheduleDelegate } from "./components/scheduleDelegate";
-import styles from "./App.scss";
-import { Header, HeaderItem } from "./components/Header/Header";
-import { icons } from "./icon/Icons";
-import { assets } from "./assets/assets.js";
+import React, { Component } from 'react';
+import * as faceapi from 'face-api.js/dist/face-api.js';
+import * as _ from 'lodash';
+import { FaceDetect } from './components/FaceDetect';
+import { VideoImage } from './components/VideoCanvas';
+import { getLandmarks } from './canvas.point';
+import { VIDEO_SIZE, INTERVAL, PARTS_INDEX } from './config';
+import AssetLoader from './components/AssetLoader';
+import AssetsSelectMenu from './components/AssetsSelectMenu/AssetsSelectMenu';
+import StampManager from './components/StampManager/StampManager';
+import { aniSprite } from './components/ani';
+import { scheduleDelegate } from './components/scheduleDelegate';
+import styles from './App.scss';
+import { Header, HeaderItem } from './components/Header/Header';
+import { icons } from './icon/Icons';
+import { assets } from './assets/assets.js';
+
+import { Canvas2DView } from './components/Canvas2DView';
+import { Web3DView } from './components/Web3DView/Web3DView';
+import { Web3D } from './components/Web3DView/Web3D';
+import { Glasses } from './components/Web3DView/Scenes/Model';
 
 class App extends Component {
   constructor(props) {
@@ -31,6 +35,7 @@ class App extends Component {
       anies: [],
       editMode: true, //アセットの表示非表示
       stampMode: true, //スタンプの表示非表示
+      tilt: {}, //3DViewで回転を抽出
       data: {
         //ロードするスタンプ
         assetId: 1,
@@ -97,21 +102,21 @@ class App extends Component {
           menu={[
             {
               id: 1,
-              label: "assets",
-              icon: "assets",
+              label: 'assets',
+              icon: 'assets',
               callback: this.callback.assets,
               show: this.state.editMode
             },
             {
               id: 2,
-              label: "stamps",
-              icon: "stamps",
+              label: 'stamps',
+              icon: 'stamps',
               callback: this.callback.stamps,
               show: this.state.stampMode
             }
           ]}
         />
-        <div className={styles["viewer"]}>
+        <div className={styles['viewer']}>
           <VideoImage
             size={VIDEO_SIZE}
             interval={INTERVAL}
@@ -147,7 +152,7 @@ class App extends Component {
             view={anies => {
               return (
                 <React.Fragment>
-                  <Canvas3DView
+                  <Canvas2DView
                     showEyes={false} //眼の点を表示 ediMode=trueの場合はtrue
                     showPoints={false} //クリック点を表示
                     editMode={this.state.editMode} //編集モード
@@ -169,6 +174,24 @@ class App extends Component {
                     positions={this.state.positions} //描画用の点
                     anies={anies} //AssetLoaderから返されるアニメーションデータ
                     loadData={this.state.data} //スタンプデータ
+                  />
+                  <Web3D
+                    size={VIDEO_SIZE}
+                    tilt={this.state.tilt}
+                    positions={this.state.positions} //描画用の点
+                    partsConfig={this.partsConfig3D} //基準パーツ
+                    landmarks={this.state.landmarks} //検出パーツ
+                    scene={(position, quat, scale) => {
+                      return (
+                        <Glasses
+                          size={VIDEO_SIZE}
+                          partsConfig={this.partsConfig3D} //基準パーツ
+                          position={position}
+                          quat={quat}
+                          scale={scale}
+                        />
+                      );
+                    }}
                   />
                 </React.Fragment>
               );

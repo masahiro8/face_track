@@ -1,4 +1,4 @@
-import * as vector from "./vector.js";
+import * as vector from './vector.js';
 
 const Ry = 50 / 0.5; //y軸の最大回転角度 / 最大割合
 const Rx = 30 / 0.5; //x軸の最大回転角度 / 最大割合
@@ -78,7 +78,7 @@ export const vec3 = (begin, end, center) => {
   const _crossProduct = vector.crossProduct(_end, { x: 100, y: 0 });
   let radian = Math.acos(vector.tilt(_end));
   let deg = radian * (180 / Math.PI);
-  const z = _crossProduct < 0 ? radian : -deg * (Math.PI / 180);
+  const z = _crossProduct < 0 ? -deg : deg;
 
   //外積
   //begin-end線上の点までの距離

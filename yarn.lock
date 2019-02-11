@@ -8418,10 +8418,22 @@ tfjs-tiny-yolov2@0.3.0:
     tfjs-image-recognition-base "0.2.0"
     tslib "^1.9.3"
 
+three-mtl-loader@^1.0.2:
+  version "1.0.2"
+  resolved "https://registry.yarnpkg.com/three-mtl-loader/-/three-mtl-loader-1.0.2.tgz#d0060f1afb8bc2c166ea56cebad250d73da18563"
+  integrity sha512-GqDrWC5rbi+0/gp999S4lpCSHroBEfe9NqmH165orG0QhXeknL/eSNVMJUWBNgg2sBW7vlqVNWD/P0kdHeGC9g==
+  dependencies:
+    three "^0.87.1"
+
 three@^0.101.1:
   version "0.101.1"
   resolved "https://registry.yarnpkg.com/three/-/three-0.101.1.tgz#e7681ef52f4e572cb84f307f16f540c457030ec6"
   integrity sha512-8ufimUVmRLtH+BTpEIbDjdGEKQOVWLMLgGynaKin1KbYTE136ZNOepJ8EgByi0tN43dQ7B1YrKLCJgXGy4bLmw==
+
+three@^0.87.1:
+  version "0.87.1"
+  resolved "https://registry.yarnpkg.com/three/-/three-0.87.1.tgz#466a34edc4543459ced9b9d7d276b65216fe2ba8"
+  integrity sha1-Rmo07cRUNFnO2bnX0na2Uhb+K6g=
 
 throat@^4.0.0:
   version "4.1.0"
