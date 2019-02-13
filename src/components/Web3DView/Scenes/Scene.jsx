@@ -2,7 +2,11 @@ import React, { Component } from 'react';
 import * as _ from 'lodash';
 import * as THREE from 'three';
 import MTLLoader from 'three-mtl-loader';
+import * as OBJLoader from 'three-obj-loader';
+import { location } from '../../../config';
 import styles from '../../VideoCanvas.scss';
+
+OBJLoader(THREE);
 
 class faceGroup extends THREE.Group {
   constructor() {
@@ -18,13 +22,20 @@ class faceGroup extends THREE.Group {
 export class ObjLoader extends Component {
   constructor(props) {
     super(props);
+    this.state = {
+      model: null
+    };
   }
-  componentDidMount() {
-    this.load();
+
+  async componentDidMount() {
+    let model = await this.load();
+    this.setState({
+      model: model
+    });
   }
 
   render() {
-    return <div />;
+    return this.props.loaded(this.state.model);
   }
 
   async loadMatrial(mtl) {
@@ -43,30 +54,56 @@ export class ObjLoader extends Component {
     });
   }
 
-  // async loadModel(obj) {
-  //   return new Promise((resolved, rejected) => {
-  //     const loader = new THREE.OBJLoader();
-  //     loader.load(
-  //       obj,
-  //       val => {
-  //         resolved(val);
-  //       },
-  //       progress => {},
-  //       error => {
-  //         rejected(error);
-  //       }
-  //     );
-  //   });
-  // }
+  async loadModel(obj) {
+    return new Promise((resolved, rejected) => {
+      this.THREE = THREE;
+      const loader = new this.THREE.OBJLoader();
+      loader.load(
+        obj,
+        val => {
+          resolved(val);
+        },
+        progress => {},
+        error => {
+          rejected(error);
+        }
+      );
+    });
+  }
+
+  async loadTexture(tex) {
+    return new Promise((resolved, rejected) => {
+      this.THREE = THREE;
+      const loader = new this.THREE.TextureLoader();
+      loader.load(
+        tex,
+        val => {
+          resolved(val);
+        },
+        progress => {},
+        error => {
+          rejected(error);
+        }
+      );
+    });
+  }
 
   async load() {
-    let material = await this.loadMatrial(
-      '../../../models/chest/mj_chest01.mtl'
-    );
-    //let model = await this.loadModel('../../../models/chest/mj_chest01.obj');
-    if (material) {
-      console.log('materialloaded', material);
-    }
+    if (!this.props.model) return;
+    let promise = new Promise(async resolved => {
+      let material = await this.loadMatrial(this.props.model.mtl);
+      let model = await this.loadModel(this.props.model.obj);
+      let texture = await this.loadTexture(this.props.model.tex);
+      if (material && model && texture) {
+        model.traverse(child => {
+          if (child instanceof THREE.Mesh) {
+            child.material.map = texture;
+          }
+        });
+        resolved(model);
+      }
+    });
+    return promise;
   }
 }
 
@@ -147,6 +184,11 @@ export class Scene extends Component {
 
     if (JSON.stringify(nextProps.scale) !== JSON.stringify(this.props.scale)) {
       this.group.scale.set(nextProps.scale, nextProps.scale, nextProps.scale);
+    }
+
+    if (JSON.stringify(nextProps.model) !== JSON.stringify(this.props.model)) {
+      console.log('Add group =', nextProps.model);
+      this.group.add(nextProps.model);
     }
   }
 

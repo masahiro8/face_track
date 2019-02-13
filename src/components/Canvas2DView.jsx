@@ -204,6 +204,7 @@ export class Canvas2DView extends Component {
           width={VIDEO_SIZE.width}
           height={VIDEO_SIZE.height}
           className={styles['overlayCanvas']}
+          onClick={e => {}}
         />
       </div>
     );
