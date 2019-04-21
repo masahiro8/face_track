@@ -13,7 +13,7 @@ export class Glasses extends Component {
     return (
       <div>
         <ObjLoader
-          model={model_url}
+          model={null}
           loaded={model => {
             // console.log('model  ', model);
             return <Scene {...this.props} model={model} />;

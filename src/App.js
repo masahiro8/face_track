@@ -33,8 +33,8 @@ class App extends Component {
       landmarks: null,
       positions: null,
       anies: [],
-      editMode: true, //アセットの表示非表示
-      stampMode: true, //スタンプの表示非表示
+      editMenu: false, //アセットの表示非表示
+      stampMenu: false, //スタンプの表示非表示
       tilt: {}, //3DViewで回転を抽出
       data: {
         //ロードするスタンプ
@@ -58,10 +58,10 @@ class App extends Component {
     this.callback = {
       edit: () => {},
       assets: () => {
-        this.setState({ editMode: !this.state.editMode });
+        this.setState({ editMenu: !this.state.editMenu });
       },
       stamps: () => {
-        this.setState({ stampMode: !this.state.stampMode });
+        this.setState({ stampMenu: !this.state.stampMenu });
       }
     };
 
@@ -105,14 +105,14 @@ class App extends Component {
               label: 'assets',
               icon: 'assets',
               callback: this.callback.assets,
-              show: this.state.editMode
+              show: this.state.editMenu
             },
             {
               id: 2,
               label: 'stamps',
               icon: 'stamps',
               callback: this.callback.stamps,
-              show: this.state.stampMode
+              show: this.state.stampMenu
             }
           ]}
         />
@@ -155,8 +155,9 @@ class App extends Component {
                   <Canvas2DView
                     showEyes={false} //眼の点を表示 ediMode=trueの場合はtrue
                     showPoints={false} //クリック点を表示
-                    editMode={this.state.editMode} //編集モード
                     multiPoints={false} //複数ポイント作成
+                    editable
+                    editMenu={this.state.editMenu} //編集モード
                     editCallback={points => {
                       //アセットを更新
                       let data = this.state.data;
@@ -200,7 +201,7 @@ class App extends Component {
         </div>
 
         <AssetsSelectMenu
-          show={this.state.editMode}
+          show={this.state.editMenu}
           assets={this.state.assets}
           callback={id => {
             let data = _.clone(this.state.data);
@@ -210,7 +211,7 @@ class App extends Component {
         />
 
         <StampManager
-          show={this.state.stampMode}
+          show={this.state.stampMenu}
           assets={this.state.assets}
           currentAsset={this.state.data}
           callback={data => {

@@ -5,6 +5,7 @@ import { VIDEO_SIZE } from '../config';
 import * as vector from '../util/vector';
 import * as Tilt from '../util/tilt';
 import * as Filter from '../util/filter';
+import { initPointRate } from '../util/initPointRate';
 import { setPoint } from '../canvas.point';
 import styles from './VideoCanvas.scss';
 
@@ -88,6 +89,7 @@ export class Canvas2DView extends Component {
       if (this.props.showPoints) this.drawParts();
       if (this.state.points.length) {
         _.each(this.state.points, (point, index) => {
+          console.log('point =  ', point);
           this.setPoint(
             point,
             index,
@@ -102,6 +104,26 @@ export class Canvas2DView extends Component {
   setCanvas(ref) {
     this.canvas = ref;
     this.props.setRef(ref);
+  }
+
+  //ポイントを追加
+  addPoint(e) {
+    var rect = this.canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const rate = initPointRate(
+      { vector: { x: x, y: y } },
+      this.positions[this.BASE_PARTS],
+      this.positions[this.VECTOR_PARTS]
+    );
+    console.log('rate =  ', rate);
+    rate.assetId = this.state.assetId;
+    this.props.editCallback(rate);
+    let points = this.state.points;
+    points[0] = rate;
+    this.setState({
+      points: points
+    });
   }
 
   //描画
@@ -204,7 +226,9 @@ export class Canvas2DView extends Component {
           width={VIDEO_SIZE.width}
           height={VIDEO_SIZE.height}
           className={styles['overlayCanvas']}
-          onClick={e => {}}
+          onClick={e => {
+            if (this.props.editable) this.addPoint(e);
+          }}
         />
       </div>
     );
